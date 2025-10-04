@@ -98,8 +98,10 @@ class FlightSearchEngine:
                 filled_length = int(progress_bar_length * (i + 1) // total_combinations)
                 bar = '█' * filled_length + '-' * (progress_bar_length - filled_length)
                 
-                print(f"[{bar}] {progress_percent:.1f}% ({i+1}/{total_combinations})")
-                print(f"Testing: {dep_date} -> {ret_date} ({days} days)")
+                # Only print progress in local environment
+                if os.environ.get('PORT') is None:  # Local environment
+                    print(f"[{bar}] {progress_percent:.1f}% ({i+1}/{total_combinations})")
+                    print(f"Testing: {dep_date} -> {ret_date} ({days} days)")
                 
                 # Send real-time progress update
                 send_progress_update(
@@ -179,7 +181,9 @@ class FlightSearchEngine:
                             }
                             all_results.append(flight_info)
                         
-                        print(f"  ✅ Found {len(result.flights)} flights, took top {len(top_flights)} for this combination")
+                        # Only print in local environment
+                        if os.environ.get('PORT') is None:
+                            print(f"  ✅ Found {len(result.flights)} flights, took top {len(top_flights)} for this combination")
                         
                         # Update progress with found flights
                         send_progress_update(
@@ -191,7 +195,9 @@ class FlightSearchEngine:
                         )
                         
                 except Exception as e:
-                    print(f"  ❌ Error: {e}")
+                    # Only print errors in local environment
+                    if os.environ.get('PORT') is None:
+                        print(f"  ❌ Error: {e}")
                     
                     # Update progress with error
                     send_progress_update(
@@ -220,10 +226,12 @@ class FlightSearchEngine:
             
             all_results.sort(key=lambda x: extract_price(x['price']))
             
-            print(f"\n🎉 Search completed!")
-            print(f"📊 Total combinations tested: {total_combinations}")
-            print(f"✈️ Flights found: {len(all_results)}")
-            print(f"🏆 Returning all {len(all_results)} results to frontend")
+            # Only print final results in local environment
+            if os.environ.get('PORT') is None:
+                print(f"\n🎉 Search completed!")
+                print(f"📊 Total combinations tested: {total_combinations}")
+                print(f"✈️ Flights found: {len(all_results)}")
+                print(f"🏆 Returning all {len(all_results)} results to frontend")
             
             # Send completion update
             send_progress_update(
@@ -670,6 +678,9 @@ if __name__ == '__main__':
         threading.Timer(1.5, open_browser).start()
     else:
         print(f"Starting Flight Search Web App on port {port}...")
+        # Disable verbose logging in production
+        import logging
+        logging.getLogger('werkzeug').setLevel(logging.ERROR)
     
     try:
         # Run Flask app
