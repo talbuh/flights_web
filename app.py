@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+# Set encoding for console output
+import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
 print("Starting app.py...")
 from flask import Flask, render_template, request, jsonify, Response
 import json
