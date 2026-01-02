@@ -93,6 +93,163 @@
             margin-bottom: 15px;
         }
 
+        .multi-city-section {
+            display: none;
+        }
+
+        .multi-city-section.active {
+            display: block;
+        }
+
+        #multi-city-fields {
+            grid-column: 1 / -1;
+        }
+
+        .multi-city-note {
+            font-size: 0.95em;
+            color: #555;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .multi-city-type {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .multi-city-type label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .multi-city-type select {
+            padding: 10px 14px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 0.95em;
+            background: white;
+            min-width: 240px;
+        }
+
+        .multi-leg-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            position: relative;
+        }
+
+        .multi-leg-connector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .multi-leg-connector::before,
+        .multi-leg-connector::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(79,172,254,0.3), rgba(118,75,162,0.3));
+        }
+
+        .multi-leg-card {
+            position: relative;
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.05);
+        }
+
+        .multi-leg-card:hover {
+            border-color: #4facfe;
+            box-shadow: 0 12px 26px rgba(79, 172, 254, 0.15);
+        }
+
+        .multi-leg-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .multi-leg-number {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+
+        .multi-leg-title {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .multi-leg-title strong {
+            font-size: 1.05rem;
+            color: #1b1f3a;
+        }
+
+        .multi-leg-title span {
+            font-size: 0.85rem;
+            color: #6c757d;
+        }
+
+        .multi-leg-swap {
+            margin-left: auto;
+            background: #f0f4ff;
+            border: 1px solid #d0dcff;
+            color: #3056d3;
+            border-radius: 999px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .multi-leg-swap:hover {
+            background: #3056d3;
+            color: white;
+            border-color: #3056d3;
+        }
+
+        .multi-leg-meta {
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1px dashed #dbe1ed;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+        }
+
+        .multi-leg-meta .form-group {
+            margin-bottom: 0;
+        }
+
+        .multi-city-hint {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 12px;
+        }
+
+        .multi-city-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
         .route-buttons {
             display: flex;
             gap: 10px;
@@ -824,7 +981,121 @@
                     <select id="trip_type" name="trip_type">
                         <option value="round-trip">Round Trip</option>
                         <option value="one-way">One Way</option>
+                        <option value="multi-city">Multi-City (3 destinations)</option>
                     </select>
+                </div>
+
+                <!-- Multi-City Fields (hidden by default) -->
+                <div id="multi-city-fields" class="multi-city-section">
+                    <div class="route-section">
+                        <h3>🛫 Multi-City Itinerary</h3>
+                        <p class="multi-city-note">
+                            Build your itinerary step-by-step. Each leg automatically chains from the previous destination and stays easy to adjust.
+                        </p>
+                        <div class="multi-city-type">
+                            <label for="multiCityItineraryType">Itinerary Type</label>
+                            <select id="multiCityItineraryType">
+                                <option value="three-leg" selected>3 legs with midpoint stop</option>
+                                <option value="open-jaw">Open-Jaw (2 legs)</option>
+                            </select>
+                        </div>
+
+                        <div class="multi-leg-wrapper">
+                            <div class="multi-leg-card" data-leg="1" id="leg1Card">
+                                <div class="multi-leg-header">
+                                    <span class="multi-leg-number">1</span>
+                                    <div class="multi-leg-title">
+                                        <strong>Leg 1 · Depart from Home</strong>
+                                        <span>Set your origin and first destination</span>
+                                    </div>
+                                    <button type="button" class="multi-leg-swap" data-swap-leg="1">Swap</button>
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="leg1_from">From</label>
+                                        <input type="text" id="leg1_from" name="leg1_from" value="TLV" placeholder="TLV" maxlength="3">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="leg1_to">To</label>
+                                        <input type="text" id="leg1_to" name="leg1_to" value="HKT" placeholder="HKT (Phuket)" maxlength="3">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="multi-leg-connector" id="connectorAfterLeg1">Continue to the next leg</div>
+
+                            <div class="multi-leg-card" data-leg="2" id="leg2Card">
+                                <div class="multi-leg-header">
+                                    <span class="multi-leg-number">2</span>
+                                    <div class="multi-leg-title">
+                                        <strong>Leg 2 · יעד האמצע</strong>
+                                        <span>Dial in the midpoint timing and flexibility</span>
+                                    </div>
+                                    <button type="button" class="multi-leg-swap" data-swap-leg="2">Swap</button>
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="leg2_from">From</label>
+                                        <input type="text" id="leg2_from" name="leg2_from" value="HKT" placeholder="HKT" maxlength="3">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="leg2_to">To</label>
+                                        <input type="text" id="leg2_to" name="leg2_to" value="BKK" placeholder="BKK (Bangkok)" maxlength="3">
+                                    </div>
+                                </div>
+
+                                <div class="multi-leg-meta" id="leg2Meta">
+                                    <div class="form-group">
+                                        <label for="leg2_target_day">Target Day in Trip</label>
+                                        <input type="number" id="leg2_target_day" name="leg2_target_day" value="8" min="2" max="60">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="leg2_flexibility">Flexibility (± days)</label>
+                                        <select id="leg2_flexibility" name="leg2_flexibility">
+                                            <option value="0">No flexibility</option>
+                                            <option value="1" selected>± 1 day</option>
+                                            <option value="2">± 2 days</option>
+                                            <option value="3">± 3 days</option>
+                                            <option value="4">± 4 days</option>
+                                            <option value="5">± 5 days</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="multi-leg-connector" id="connectorAfterLeg2">Wrap up the trip</div>
+
+                            <div class="multi-leg-card" data-leg="3" id="leg3Card">
+                                <div class="multi-leg-header">
+                                    <span class="multi-leg-number">3</span>
+                                    <div class="multi-leg-title">
+                                        <strong>Leg 3 · Return Home</strong>
+                                        <span>Close out the itinerary from your final stop</span>
+                                    </div>
+                                    <button type="button" class="multi-leg-swap" data-swap-leg="3">Swap</button>
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="leg3_from">From</label>
+                                        <input type="text" id="leg3_from" name="leg3_from" value="BKK" placeholder="BKK" maxlength="3">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="leg3_to">To</label>
+                                        <input type="text" id="leg3_to" name="leg3_to" value="TLV" placeholder="TLV (Return home)" maxlength="3">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="leg1_date" name="leg1_date">
+                        <input type="hidden" id="leg2_date" name="leg2_date">
+                        <input type="hidden" id="leg3_date" name="leg3_date">
+
+                        <p class="multi-city-hint">The assistant will search combinations across your travel window, trip length, and chosen midpoint target.</p>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -1285,27 +1556,269 @@
         document.getElementById('start_period').value = nextMonth.toISOString().split('T')[0];
         document.getElementById('end_period').value = endPeriod.toISOString().split('T')[0];
 
-        // Search type toggle
+        const specificDatesBtn = document.getElementById('specificDatesBtn');
+        const dateRangeBtn = document.getElementById('dateRangeBtn');
+        const specificDatesFields = document.getElementById('specificDatesFields');
+        const dateRangeFields = document.getElementById('dateRangeFields');
+        const multiCityFields = document.getElementById('multi-city-fields');
+        const fromAirportInput = document.getElementById('from_airport');
+        const toAirportInput = document.getElementById('to_airport');
+        const tripTypeSelect = document.getElementById('trip_type');
+        const returnDateField = document.getElementById('return_date');
+
+        const leg1FromInput = document.getElementById('leg1_from');
+        const leg1ToInput = document.getElementById('leg1_to');
+        const leg2FromInput = document.getElementById('leg2_from');
+        const leg2ToInput = document.getElementById('leg2_to');
+        const leg3FromInput = document.getElementById('leg3_from');
+        const leg3ToInput = document.getElementById('leg3_to');
+        const leg1DateInput = document.getElementById('leg1_date');
+        const leg2DateInput = document.getElementById('leg2_date');
+        const leg3DateInput = document.getElementById('leg3_date');
+        const startPeriodInput = document.getElementById('start_period');
+        const minVacationInput = document.getElementById('min_vacation_days');
+        const maxVacationInput = document.getElementById('max_vacation_days');
+        const leg2TargetDayInput = document.getElementById('leg2_target_day');
+        const leg2FlexibilityInput = document.getElementById('leg2_flexibility');
+        const multiCityItinerarySelect = document.getElementById('multiCityItineraryType');
+        const leg2Card = document.getElementById('leg2Card');
+        const leg3Card = document.getElementById('leg3Card');
+        const leg2Meta = document.getElementById('leg2Meta');
+        const connectorAfterLeg1 = document.getElementById('connectorAfterLeg1');
+        const connectorAfterLeg2 = document.getElementById('connectorAfterLeg2');
+        const leg3NumberBadge = leg3Card?.querySelector('.multi-leg-number');
+        const leg3TitleStrong = leg3Card?.querySelector('.multi-leg-title strong');
+        const leg3TitleSpan = leg3Card?.querySelector('.multi-leg-title span');
+        const leg3TitleStrongDefault = leg3TitleStrong?.textContent || 'Leg 3 · Return Home';
+        const leg3TitleSpanDefault = leg3TitleSpan?.textContent || 'Close out the itinerary from your final stop';
+        const leg2TitleStrong = leg2Card?.querySelector('.multi-leg-title strong');
+        const leg2TitleSpan = leg2Card?.querySelector('.multi-leg-title span');
+        const leg2NumberBadge = leg2Card?.querySelector('.multi-leg-number');
+        const leg1TitleStrong = document.querySelector('#leg1Card .multi-leg-title strong');
+        const leg1TitleSpan = document.querySelector('#leg1Card .multi-leg-title span');
+        const leg1TitleStrongDefault = leg1TitleStrong?.textContent || 'Leg 1 · Depart from Home';
+        const leg1TitleSpanDefault = leg1TitleSpan?.textContent || 'Set your origin and first destination';
+
         let currentSearchType = 'specific';
-        
-        document.getElementById('specificDatesBtn').addEventListener('click', function() {
-            currentSearchType = 'specific';
-            document.getElementById('specificDatesBtn').classList.add('active');
-            document.getElementById('dateRangeBtn').classList.remove('active');
-            document.getElementById('specificDatesFields').style.display = 'block';
-            document.getElementById('dateRangeFields').style.display = 'none';
-            document.getElementById('departure_date').required = true;
-            document.getElementById('return_date').required = true;
+        let currentTripType = tripTypeSelect.value;
+        let currentDateMode = 'specific';
+        let previousDateModeBeforeMultiCity = 'specific';
+        let currentResultContext = 'regular';
+        let currentMultiCityItinerary = 'three-leg';
+
+        function updateSearchType() {
+            if (currentTripType === 'multi-city') {
+                currentSearchType = currentMultiCityItinerary === 'open-jaw' ? 'multi-city-open-jaw' : 'multi-city-range';
+            } else if (currentDateMode === 'range') {
+                currentSearchType = 'range';
+            } else {
+                currentSearchType = 'specific';
+            }
+        }
+
+        function setMultiCityItinerary(mode) {
+            currentMultiCityItinerary = mode;
+            const isOpenJaw = mode === 'open-jaw';
+
+            if (leg2Card) {
+                leg2Card.style.display = isOpenJaw ? 'none' : '';
+            }
+            if (connectorAfterLeg1) {
+                connectorAfterLeg1.style.display = isOpenJaw ? 'none' : 'flex';
+            }
+            if (connectorAfterLeg2) {
+                connectorAfterLeg2.textContent = isOpenJaw ? 'Finish the journey' : 'Wrap up the trip';
+            }
+
+            const leg2Fields = [leg2FromInput, leg2ToInput, leg2DateInput, leg2TargetDayInput, leg2FlexibilityInput];
+            leg2Fields.forEach(field => {
+                if (!field) return;
+                field.disabled = isOpenJaw;
+            });
+
+            if (leg2Meta) {
+                leg2Meta.style.display = isOpenJaw ? 'none' : 'grid';
+            }
+
+            if (leg3NumberBadge) {
+                leg3NumberBadge.textContent = isOpenJaw ? '2' : '3';
+            }
+
+            if (leg3TitleStrong && leg3TitleSpan) {
+                if (isOpenJaw) {
+                    leg3TitleStrong.textContent = 'Leg 2 · Return Home';
+                    leg3TitleSpan.textContent = 'Plan the final segment back home';
+                } else {
+                    leg3TitleStrong.textContent = leg3TitleStrongDefault;
+                    leg3TitleSpan.textContent = leg3TitleSpanDefault;
+                }
+            }
+
+            if (leg2NumberBadge && leg2TitleStrong && leg2TitleSpan) {
+                leg2NumberBadge.textContent = '2';
+                leg2TitleStrong.textContent = 'Leg 2 · יעד האמצע';
+                leg2TitleSpan.textContent = 'Dial in the midpoint timing and flexibility';
+            }
+
+            if (leg1TitleStrong && leg1TitleSpan) {
+                leg1TitleStrong.textContent = leg1TitleStrongDefault;
+                leg1TitleSpan.textContent = leg1TitleSpanDefault;
+            }
+
+            if (leg3Card) {
+                leg3Card.style.marginTop = isOpenJaw ? '0' : '';
+            }
+
+            updateSearchType();
+            seedMultiCityDates();
+            syncLegChain();
+        }
+
+        function enableSpecificButton(enabled) {
+            specificDatesBtn.disabled = !enabled;
+            if (enabled) {
+                specificDatesBtn.classList.remove('multi-city-disabled');
+            } else {
+                specificDatesBtn.classList.add('multi-city-disabled');
+            }
+        }
+
+        function setDateMode(mode, options = {}) {
+            if (currentTripType === 'multi-city' && mode === 'specific' && !options.force) {
+                return;
+            }
+
+            currentDateMode = mode;
+            if (mode === 'specific') {
+                specificDatesBtn.classList.add('active');
+                dateRangeBtn.classList.remove('active');
+                specificDatesFields.style.display = 'block';
+                dateRangeFields.style.display = 'none';
+                document.getElementById('departure_date').required = true;
+                document.getElementById('return_date').required = (currentTripType === 'round-trip');
+            } else {
+                dateRangeBtn.classList.add('active');
+                specificDatesBtn.classList.remove('active');
+                specificDatesFields.style.display = 'none';
+                dateRangeFields.style.display = 'block';
+                document.getElementById('departure_date').required = false;
+                document.getElementById('return_date').required = false;
+            }
+
+            updateSearchType();
+        }
+
+        function toggleMultiCitySection(show) {
+            if (show) {
+                multiCityFields.classList.add('active');
+                fromAirportInput.disabled = true;
+                toAirportInput.disabled = true;
+                syncLegChain();
+                seedMultiCityDates();
+            } else {
+                multiCityFields.classList.remove('active');
+                fromAirportInput.disabled = false;
+                toAirportInput.disabled = false;
+            }
+        }
+
+        function uppercaseIATA(input) {
+            if (!input) return;
+            const cleaned = input.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+            input.value = cleaned;
+        }
+
+        function autoFillNext(source, target) {
+            if (!source || !target) return;
+            const sourceValue = source.value.trim().toUpperCase();
+            const targetValue = target.value.trim().toUpperCase();
+            const autoValue = target.dataset.autoValue;
+
+            if (!sourceValue) {
+                return;
+            }
+
+            if (!targetValue || targetValue === autoValue) {
+                target.value = sourceValue;
+                target.dataset.autoValue = sourceValue;
+            }
+        }
+
+        function formatDateInput(date) {
+            if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+                return '';
+            }
+            return date.toISOString().split('T')[0];
+        }
+
+        function seedMultiCityDates() {
+            if (!leg1DateInput || !leg2DateInput || !leg3DateInput) {
+                return;
+            }
+
+            const startValue = startPeriodInput?.value || '';
+            if (!startValue) {
+                leg1DateInput.value = '';
+                leg2DateInput.value = '';
+                leg3DateInput.value = '';
+                return;
+            }
+
+            const startDate = new Date(startValue);
+            if (Number.isNaN(startDate.getTime())) {
+                return;
+            }
+
+            if (currentMultiCityItinerary === 'open-jaw') {
+                const minDaysRaw = parseInt(minVacationInput?.value || '7', 10);
+                const minDays = Number.isNaN(minDaysRaw) ? 2 : Math.max(minDaysRaw, 2);
+                const endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + minDays);
+
+                leg1DateInput.value = formatDateInput(startDate);
+                leg3DateInput.value = formatDateInput(endDate);
+                if (leg2DateInput) {
+                    leg2DateInput.value = '';
+                }
+                return;
+            }
+
+            const midOffset = Math.max(parseInt(leg2TargetDayInput?.value || '8', 10), 2);
+            const minDaysRaw = parseInt(minVacationInput?.value || '7', 10);
+            const maxDaysRaw = parseInt(maxVacationInput?.value || String((minDaysRaw || 7) + 7), 10);
+            const minDays = Number.isNaN(minDaysRaw) ? midOffset + 1 : Math.max(minDaysRaw, midOffset + 1);
+            const maxDays = Number.isNaN(maxDaysRaw) ? minDays + 7 : Math.max(maxDaysRaw, minDays, midOffset + 2);
+
+            const midDate = new Date(startDate);
+            midDate.setDate(startDate.getDate() + midOffset);
+
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + maxDays);
+
+            leg1DateInput.value = formatDateInput(startDate);
+            leg2DateInput.value = formatDateInput(midDate);
+            leg3DateInput.value = formatDateInput(endDate);
+        }
+
+        function syncLegChain() {
+            if (currentMultiCityItinerary === 'open-jaw') {
+                autoFillNext(leg1ToInput, leg3FromInput);
+                autoFillNext(leg1FromInput, leg3ToInput);
+            } else {
+            autoFillNext(leg1ToInput, leg2FromInput);
+            autoFillNext(leg2ToInput, leg3FromInput);
+            }
+        }
+
+        specificDatesBtn.addEventListener('click', function() {
+            if (this.disabled) {
+                return;
+            }
+            setDateMode('specific');
         });
 
-        document.getElementById('dateRangeBtn').addEventListener('click', function() {
-            currentSearchType = 'range';
-            document.getElementById('dateRangeBtn').classList.add('active');
-            document.getElementById('specificDatesBtn').classList.remove('active');
-            document.getElementById('specificDatesFields').style.display = 'none';
-            document.getElementById('dateRangeFields').style.display = 'block';
-            document.getElementById('departure_date').required = false;
-            document.getElementById('return_date').required = false;
+        dateRangeBtn.addEventListener('click', function() {
+            setDateMode('range');
         });
 
         // Route buttons
@@ -1314,22 +1827,116 @@
                 document.querySelectorAll('.route-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 
-                document.getElementById('from_airport').value = this.dataset.from;
-                document.getElementById('to_airport').value = this.dataset.to;
+                fromAirportInput.value = this.dataset.from;
+                toAirportInput.value = this.dataset.to;
             });
         });
 
-        // Trip type change
-        document.getElementById('trip_type').addEventListener('change', function() {
-            const returnDateField = document.getElementById('return_date');
-            if (this.value === 'one-way') {
+        tripTypeSelect.addEventListener('change', function() {
+            const previousTripType = currentTripType;
+            currentTripType = this.value;
+
+            if (currentTripType === 'one-way') {
                 returnDateField.disabled = true;
                 returnDateField.required = false;
+                toggleMultiCitySection(false);
+                enableSpecificButton(true);
+                if (previousTripType === 'multi-city') {
+                    currentDateMode = previousDateModeBeforeMultiCity;
+                }
+                setDateMode(currentDateMode);
+            } else if (currentTripType === 'multi-city') {
+                returnDateField.disabled = true;
+                returnDateField.required = false;
+                toggleMultiCitySection(true);
+                enableSpecificButton(false);
+                previousDateModeBeforeMultiCity = currentDateMode;
+                setDateMode('range', { force: true });
+                if (multiCityItinerarySelect) {
+                    setMultiCityItinerary(multiCityItinerarySelect.value);
+                } else {
+                    setMultiCityItinerary('three-leg');
+                }
             } else {
                 returnDateField.disabled = false;
                 returnDateField.required = true;
+                toggleMultiCitySection(false);
+                enableSpecificButton(true);
+                if (previousTripType === 'multi-city') {
+                    currentDateMode = previousDateModeBeforeMultiCity;
+                }
+                setDateMode(currentDateMode);
             }
+
+            updateSearchType();
         });
+
+        if (multiCityItinerarySelect) {
+            multiCityItinerarySelect.addEventListener('change', () => {
+                setMultiCityItinerary(multiCityItinerarySelect.value);
+            });
+        }
+
+        [leg1FromInput, leg1ToInput, leg2FromInput, leg2ToInput, leg3FromInput, leg3ToInput].forEach(input => {
+            if (!input) return;
+            input.addEventListener('input', () => uppercaseIATA(input));
+            input.addEventListener('blur', () => {
+                uppercaseIATA(input);
+                input.dataset.autoValue = input.value.trim().toUpperCase();
+            });
+        });
+
+        leg1ToInput.addEventListener('input', () => {
+            uppercaseIATA(leg1ToInput);
+            autoFillNext(leg1ToInput, leg2FromInput);
+        });
+
+        leg2ToInput.addEventListener('input', () => {
+            uppercaseIATA(leg2ToInput);
+            autoFillNext(leg2ToInput, leg3FromInput);
+        });
+
+        document.querySelectorAll('.multi-leg-swap').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const leg = btn.dataset.swapLeg;
+                const fromInput = document.getElementById(`leg${leg}_from`);
+                const toInput = document.getElementById(`leg${leg}_to`);
+                if (!fromInput || !toInput) {
+                    return;
+                }
+                const temp = fromInput.value;
+                fromInput.value = toInput.value;
+                toInput.value = temp;
+                uppercaseIATA(fromInput);
+                uppercaseIATA(toInput);
+                fromInput.dataset.autoValue = fromInput.value.trim().toUpperCase();
+                toInput.dataset.autoValue = toInput.value.trim().toUpperCase();
+
+                if (leg === '1') {
+                    autoFillNext(leg1ToInput, leg2FromInput);
+                } else if (leg === '2') {
+                    autoFillNext(leg2ToInput, leg3FromInput);
+                }
+            });
+        });
+
+        [startPeriodInput, minVacationInput, maxVacationInput, leg2TargetDayInput].forEach(input => {
+            if (!input) {
+                return;
+            }
+            input.addEventListener('input', seedMultiCityDates);
+            input.addEventListener('change', seedMultiCityDates);
+        });
+
+        if (leg2FlexibilityInput) {
+            leg2FlexibilityInput.addEventListener('change', seedMultiCityDates);
+        }
+
+        // Initialize defaults
+        setDateMode('specific');
+        syncLegChain();
+        seedMultiCityDates();
+        updateSearchType();
 
         // Progress tracking variables
         let progressInterval;
@@ -1349,15 +1956,22 @@
             searchBtn.disabled = true;
             results.style.display = 'none';
             
-            if (currentSearchType === 'range') {
-                // Show progress bar for range search
-                searchBtn.textContent = 'Analyzing Date Range...';
+            const isMultiCitySearch = currentSearchType.startsWith('multi-city');
+
+            if (currentSearchType === 'range' || isMultiCitySearch) {
+                // Show progress bar for range or multi-city search
+                searchBtn.textContent = currentSearchType === 'range' ? 'Analyzing Date Range...' : 'Searching Multi-City...';
                 loading.style.display = 'none';
                 progressContainer.style.display = 'block';
                 
                 // Reset progress
                 resetProgress();
                 searchStartTime = Date.now();
+
+                const progressText = currentSearchType === 'range'
+                    ? 'Preparing date combinations...'
+                    : 'Preparing multi-city combinations...';
+                document.getElementById('progressText').textContent = progressText;
                 
                 // Start real-time progress updates
                 startRealTimeProgress();
@@ -1370,8 +1984,17 @@
             }
             
             try {
+                if (isMultiCitySearch) {
+                    seedMultiCityDates();
+                }
                 const formData = new FormData(this);
-                const endpoint = currentSearchType === 'range' ? '/search_range' : '/search';
+                let endpoint = '/search';
+                if (currentSearchType === 'range') {
+                    endpoint = '/search_range';
+                } else if (isMultiCitySearch) {
+                    endpoint = '/search_multi_city';
+                    formData.append('multi_city_mode', currentSearchType);
+                }
                 
                 const response = await fetch(endpoint, {
                     method: 'POST',
@@ -1491,33 +2114,44 @@
             const results = document.getElementById('results');
             
             let html = '';
+            let flightsForFilters = data.flights || [];
+            let flightsForCalendar = data.flights || [];
+            const currencySymbols = {
+                'ILS': '₪',
+                'USD': '$',
+                'EUR': '€',
+                'GBP': '£'
+            };
+            const resultCurrency = data.config?.currency || 'ILS';
             
             // Search type indicator
-            if (data.search_type === 'date_range') {
-                const currencySymbol = {
-                    'ILS': '₪',
-                    'USD': '$',
-                    'EUR': '€',
-                    'GBP': '£'
-                };
-                const currency = data.config?.currency || 'ILS';
+            if (data.search_type === 'multi_city') {
+                currentResultContext = 'multi-city';
+                const currencySymbol = currencySymbols[resultCurrency] || resultCurrency;
+                
+                html += `
+                    <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                        <h3>✈️ Multi-City Results</h3>
+                        <p>Found ${data.total_found} multi-city combinations, showing ${data.flights.length} results sorted by total price</p>
+                        <p style="font-size: 0.9em; opacity: 0.9;">Total prices shown in ${currencySymbol} ${resultCurrency}</p>
+                        <p style="font-size: 0.85em; opacity: 0.85; margin-top: 8px;">Use the airline filters to exclude carriers you don’t want — the list will refill with the next best options automatically.</p>
+                    </div>
+                `;
+            } else if (data.search_type === 'date_range') {
+                currentResultContext = 'date-range';
+                const currencySymbol = currencySymbols[resultCurrency] || resultCurrency;
                 
                 html += `
                     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
                         <h3>🔥 Smart Date Range Results</h3>
                         <p>Found ${data.total_found} flights from ${data.total_combinations_tested} date combinations, showing ${data.flights.length} results sorted by price</p>
-                        <p style="font-size: 0.9em; opacity: 0.9;">Prices shown in ${currencySymbol[currency] || currency} ${currency}</p>
+                        <p style="font-size: 0.9em; opacity: 0.9;">Prices shown in ${currencySymbol} ${resultCurrency}</p>
                     </div>
                 `;
             } else {
+                currentResultContext = 'regular';
                 // Price level indicator for regular search
-                const currencySymbol = {
-                    'ILS': '₪',
-                    'USD': '$',
-                    'EUR': '€',
-                    'GBP': '£'
-                };
-                const currency = data.config?.currency || 'ILS';
+                const currencySymbol = currencySymbols[resultCurrency] || resultCurrency;
                 
                 if (data.price_level) {
                     const levelText = data.price_level.toUpperCase();
@@ -1533,14 +2167,76 @@
                         </div>
                     `;
                 }
-                html += `<p><strong>Found ${data.total_found} flights</strong> - Prices in ${currencySymbol[currency] || currency} ${currency}</p>`;
+                html += `<p><strong>Found ${data.total_found} flights</strong> - Prices in ${currencySymbol} ${resultCurrency}</p>`;
             }
             
+            if (data.search_type === 'multi_city') {
+                if (data.flights.length === 0) {
+                    html += '<p>No flights found for your search criteria.</p>';
+                    resultsContent.innerHTML = html;
+                    results.style.display = 'block';
+                    document.getElementById('calendarContainer').style.display = 'none';
+                    initializeFilters([]);
+                    return;
+                }
+
+                    const fallbackCurrencySymbol = currencySymbols[resultCurrency] || resultCurrency;
+
+                    const normalizedFlights = (data.flights || []).map((flight, index) => {
+                        const legs = [flight.leg1, flight.leg2, flight.leg3].filter(Boolean);
+                    const flightCurrencySymbol = flight.currency_symbol || fallbackCurrencySymbol || '';
+                        const totalPrice = Number(flight.total_price || 0);
+                        const totalMinutes = legs.reduce((sum, leg) => sum + parseDurationToMinutes(leg ? leg.duration : null), 0);
+                        const airlines = legs.map(leg => leg?.airline).filter(Boolean);
+                        const uniqueAirlines = airlines.length ? [...new Set(airlines)] : [];
+                        const airlineLabel = uniqueAirlines.length ? uniqueAirlines.join(' · ') : 'Multiple Airlines';
+                        const departureDate = flight.leg1?.date || flight.trip_summary?.start_date || '';
+                        const returnDate = flight.leg3?.date || flight.trip_summary?.return_date || '';
+                        const departureTime = flight.leg1?.departure || 'N/A';
+                        const arrivalTime = flight.leg3?.arrival || 'N/A';
+                        const tripSummary = flight.trip_summary || {};
+
+                        return {
+                            internal_id: index,
+                            airline: airlineLabel,
+                        price: `${flightCurrencySymbol}${totalPrice.toLocaleString()}`,
+                            duration: formatMinutesToDuration(totalMinutes),
+                            departure: departureTime,
+                            arrival: arrivalTime,
+                            departure_date: departureDate,
+                            return_date: returnDate,
+                        currency_symbol: flightCurrencySymbol,
+                            total_price_numeric: totalPrice,
+                            duration_minutes: totalMinutes,
+                            stops: `${legs.length} segments`,
+                            legs,
+                        trip_summary: tripSummary,
+                            raw: flight
+                        };
+                    });
+
+                    flightsForFilters = normalizedFlights;
+                    flightsForCalendar = normalizedFlights;
+
+                html += '<div id="multiCityCards"></div>';
+
+                resultsContent.innerHTML = html;
+                results.style.display = 'block';
+
+                if (flightsForCalendar.length > 0) {
+                    updateCalendarWithFlights(flightsForCalendar);
+                } else {
+                    document.getElementById('calendarContainer').style.display = 'none';
+                }
+
+                initializeFilters(flightsForFilters);
+                return;
+            }
+
             if (data.flights.length === 0) {
                 html += '<p>No flights found for your search criteria.</p>';
             } else {
                 data.flights.forEach((flight, index) => {
-                    // Different display for date range vs regular search
                     if (data.search_type === 'date_range') {
                         const priceEmoji = {
                             'low': '💚',
@@ -1705,12 +2401,14 @@
             }, 100);
             
             // Update calendar with flight data
-            if (data.flights && data.flights.length > 0) {
-                updateCalendarWithFlights(data.flights);
+            if (flightsForCalendar && flightsForCalendar.length > 0) {
+                updateCalendarWithFlights(flightsForCalendar);
+            } else {
+                document.getElementById('calendarContainer').style.display = 'none';
             }
             
             // Initialize filters after displaying results
-            initializeFilters(data.flights);
+            initializeFilters(flightsForFilters);
         }
 
         // Debug: Check if new version loaded
@@ -1747,9 +2445,11 @@
             maxDepartureTime: 1440,  // in minutes from midnight
             maxArrivalTime: 1440     // in minutes from midnight
         };
+        let suppressFilterUpdates = false;
 
         function initializeFilters(flights) {
             allFlights = flights;
+            currentFilters.airlines = new Set();
             
             if (flights.length === 0) {
                 document.getElementById('filterPanel').style.display = 'none';
@@ -1836,11 +2536,18 @@
             maxArrivalTimeRange.max = 1440;
             maxArrivalTimeRange.value = 1440;
             
-            // Update displays
+            const displayLimitSelect = document.getElementById('displayLimit');
+            if (displayLimitSelect) {
+                displayLimitSelect.value = currentResultContext === 'multi-city' ? '200' : '25';
+            }
+
+            suppressFilterUpdates = true;
             updatePriceFilter();
             updateDurationFilter();
             updateFlightTimesFilter();
-            updateFilterStats();
+            suppressFilterUpdates = false;
+
+            applyFilters();
         }
 
         function deselectAllAirlines() {
@@ -1964,7 +2671,9 @@
             
             // Update all displays
             updateAirlineDisplay();
+            if (!suppressFilterUpdates) {
             applyFilters();
+            }
         }
 
         function updatePriceFilter() {
@@ -1990,7 +2699,9 @@
             maxPriceDisplay.textContent = `Up to ${symbol}${Math.round(currentFilters.maxPrice).toLocaleString()}`;
             
             updateAirlineDisplay();
+            if (!suppressFilterUpdates) {
             applyFilters();
+            }
         }
 
         function updateDurationFilter() {
@@ -2034,7 +2745,9 @@
             durationRangeDisplay.textContent = `${minDisplay} - ${maxDisplay}`;
             
             updateAirlineDisplay();
+            if (!suppressFilterUpdates) {
             applyFilters();
+            }
         }
 
         function updateFlightTimesFilter() {
@@ -2059,7 +2772,9 @@
             flightTimesDisplay.textContent = `Departure: ${depText}, Arrival: ${arrText}`;
             
             updateAirlineDisplay();
+            if (!suppressFilterUpdates) {
             applyFilters();
+            }
         }
 
         // Helper function to parse duration string to minutes
@@ -2079,6 +2794,147 @@
             }
             
             return 0;
+        }
+
+        function formatMinutesToDuration(totalMinutes) {
+            if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) {
+                return 'N/A';
+            }
+
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = Math.round(totalMinutes % 60);
+            const parts = [];
+
+            if (hours > 0) {
+                parts.push(`${hours}h`);
+            }
+            if (minutes > 0) {
+                parts.push(`${minutes}m`);
+            }
+
+            if (parts.length === 0) {
+                return '0m';
+            }
+
+            return parts.join(' ');
+        }
+
+        function buildMultiCityCardHtml(flight, rankIndex) {
+            const legs = flight.legs || [];
+            const currencySymbol = flight.currency_symbol || '';
+            const totalPriceDisplay = flight.price || `${currencySymbol}${(flight.total_price_numeric || 0).toLocaleString()}`;
+            const totalMinutes = flight.duration_minutes || 0;
+            const tripSummary = flight.trip_summary || {};
+            const departureDate = flight.departure_date || tripSummary.start_date || 'N/A';
+            const returnDate = flight.return_date || tripSummary.return_date || 'N/A';
+            const departureTime = convertTo24Hour(flight.departure || 'N/A');
+            const arrivalTime = convertTo24Hour(flight.arrival || 'N/A');
+            const airlineLabel = flight.airline || 'Multiple Airlines';
+
+            const legThemes = [
+                { bg: '#f8f9fa', color: '#28a745', icon: '🛫' },
+                { bg: '#fff3cd', color: '#856404', icon: '🛫' },
+                { bg: '#d1ecf1', color: '#0c5460', icon: '🛬' }
+            ];
+
+            const itineraryParts = [];
+            if (legs.length > 0) {
+                itineraryParts.push(legs[0]?.from || '???');
+                legs.forEach(leg => itineraryParts.push(leg?.to || '???'));
+            } else {
+                itineraryParts.push('???');
+            }
+            const itineraryPath = itineraryParts.join(' → ');
+
+            const legSections = legs.map((leg, idx) => {
+                const theme = legThemes[Math.min(idx, legThemes.length - 1)];
+                const legPrice = Number(leg?.price || 0);
+                return `
+                    <div class="multi-leg-breakdown" style="background: ${theme.bg}; padding: 15px; border-radius: 8px; margin: 10px 0;">
+                        <h4 style="color: ${theme.color}; margin-bottom: 10px;">${theme.icon} Leg ${idx + 1}: ${leg?.from || 'N/A'} → ${leg?.to || 'N/A'}</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; font-size: 0.9em;">
+                            <div><strong>Date:</strong> ${leg?.date || 'N/A'}</div>
+                            <div><strong>Airline:</strong> ${leg?.airline || 'N/A'}</div>
+                            <div><strong>Departure:</strong> ${convertTo24Hour(leg?.departure || 'N/A')}</div>
+                            <div><strong>Arrival:</strong> ${convertTo24Hour(leg?.arrival || 'N/A')}</div>
+                            <div><strong>Duration:</strong> ${leg?.duration || 'N/A'}</div>
+                            <div><strong>Stops:</strong> ${leg?.stops || 'N/A'}</div>
+                            <div><strong>Price:</strong> ${currencySymbol}${legPrice.toLocaleString()}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const summarySection = (tripSummary.start_date || tripSummary.mid_date || tripSummary.return_date) ? `
+                <div class="multi-leg-summary" style="margin: 12px 0; font-size: 0.9em; color: #555;">
+                    <strong>Trip Summary:</strong>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-top: 6px;">
+                        <div><strong>Start:</strong> ${tripSummary.start_date || departureDate}</div>
+                        <div><strong>Midpoint:</strong> ${tripSummary.mid_date || 'N/A'}${tripSummary.mid_trip_day ? ` (Day ${tripSummary.mid_trip_day})` : ''}</div>
+                        <div><strong>Return:</strong> ${tripSummary.return_date || returnDate}</div>
+                    </div>
+                </div>
+            ` : '';
+
+            return `
+                <div class="flight-card multi-city-card" data-flight-index="${flight.internal_id}" style="border-left: 5px solid ${rankIndex < 3 ? '#ff6b6b' : '#6c757d'};">
+                    <div class="flight-header">
+                        <div>
+                            <div class="airline">${airlineLabel}</div>
+                            <div style="font-size: 0.9em; color: #666;">
+                                ${itineraryPath}
+                            </div>
+                            <div style="font-size: 0.85em; color: #888;">
+                                ${departureDate} → ${returnDate}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="price">${totalPriceDisplay}</div>
+                            ${rankIndex < 3 ? '<span class="best-badge">TOP DEAL</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="flight-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Total Duration</div>
+                            <div class="detail-value">${formatMinutesToDuration(totalMinutes)}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Segments</div>
+                            <div class="detail-value">${legs.length}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Departure Time</div>
+                            <div class="detail-value">${departureTime}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Return Time</div>
+                            <div class="detail-value">${arrivalTime}</div>
+                        </div>
+                    </div>
+                    ${summarySection}
+                    ${legSections}
+                    <div class="flight-actions">
+                        <button class="book-btn" onclick="window.open('https://www.google.com/travel/flights', '_blank')">
+                            Book Multi-City on Google Flights
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMultiCityCards(flights) {
+            const container = document.getElementById('multiCityCards');
+            if (!container) return;
+
+            if (!Array.isArray(flights) || flights.length === 0) {
+                container.innerHTML = '<p>No flights match your filters. Try adjusting the airline or price filters.</p>';
+                addFlightCardClickHandlers();
+                return;
+            }
+
+            const cardsHtml = flights.map((flight, idx) => buildMultiCityCardHtml(flight, idx)).join('');
+            container.innerHTML = cardsHtml;
+            addFlightCardClickHandlers();
         }
 
         function applyFilters() {
@@ -2171,6 +3027,11 @@
             }
             
             // Now update the display
+            if (currentResultContext === 'multi-city') {
+                renderMultiCityCards(filteredFlights);
+                updateFilterStats(filteredFlights.length);
+                return;
+            }
             const flightCards = document.querySelectorAll('.flight-card');
             const filteredIndices = new Set();
             
@@ -2225,6 +3086,8 @@
         }
 
         function clearAllFilters() {
+            suppressFilterUpdates = true;
+
             // Reset airline filters
             currentFilters.airlines.clear();
             const airlineCheckboxes = document.querySelectorAll('#airlineFilters input[type="checkbox"]');
@@ -2254,7 +3117,12 @@
             updateFlightTimesFilter();
             
             // Reset display limit
-            document.getElementById('displayLimit').value = '25';
+            const displayLimitSelect = document.getElementById('displayLimit');
+            if (displayLimitSelect) {
+                displayLimitSelect.value = currentResultContext === 'multi-city' ? '200' : '25';
+            }
+
+            suppressFilterUpdates = false;
             
             applyFilters();
         }
@@ -2271,6 +3139,7 @@
             
             results.style.display = 'block';
         }
+
     </script>
 </body>
 </html>

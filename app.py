@@ -11,10 +11,12 @@ import logging
 import webbrowser
 import threading
 import time
+import os
 
 logging.basicConfig(level=logging.WARNING)
 
 app = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 class FlightSearchEngine:
     def __init__(self):
@@ -96,7 +98,7 @@ class FlightSearchEngine:
                 progress_percent = ((i + 1) / total_combinations) * 100
                 progress_bar_length = 30
                 filled_length = int(progress_bar_length * (i + 1) // total_combinations)
-                bar = '█' * filled_length + '-' * (progress_bar_length - filled_length)
+                bar = '=' * filled_length + '-' * (progress_bar_length - filled_length)
                 
                 # Only print progress in local environment
                 if os.environ.get('PORT') is None:  # Local environment
@@ -107,7 +109,7 @@ class FlightSearchEngine:
                 send_progress_update(
                     current=i + 1,
                     total=total_combinations,
-                    current_dates=f"{dep_date} → {ret_date} ({days} days)",
+                    current_dates=f"{dep_date} -> {ret_date} ({days} days)",
                     status="searching",
                     flights_found=len(all_results)
                 )
@@ -183,13 +185,13 @@ class FlightSearchEngine:
                         
                         # Only print in local environment
                         if os.environ.get('PORT') is None:
-                            print(f"  ✅ Found {len(result.flights)} flights, took top {len(top_flights)} for this combination")
+                            print(f"  [OK] Found {len(result.flights)} flights, took top {len(top_flights)} for this combination")
                         
                         # Update progress with found flights
                         send_progress_update(
                             current=i + 1,
                             total=total_combinations,
-                            current_dates=f"{dep_date} → {ret_date} ({days} days)",
+                            current_dates=f"{dep_date} -> {ret_date} ({days} days)",
                             status="found_flights",
                             flights_found=len(all_results)
                         )
@@ -197,13 +199,13 @@ class FlightSearchEngine:
                 except Exception as e:
                     # Only print errors in local environment
                     if os.environ.get('PORT') is None:
-                        print(f"  ❌ Error: {e}")
+                        print(f"  [ERROR] {e}")
                     
                     # Update progress with error
                     send_progress_update(
                         current=i + 1,
                         total=total_combinations,
-                        current_dates=f"{dep_date} → {ret_date} ({days} days)",
+                        current_dates=f"{dep_date} -> {ret_date} ({days} days)",
                         status="error",
                         flights_found=len(all_results)
                     )
@@ -228,10 +230,10 @@ class FlightSearchEngine:
             
             # Only print final results in local environment
             if os.environ.get('PORT') is None:
-                print(f"\n🎉 Search completed!")
-                print(f"📊 Total combinations tested: {total_combinations}")
-                print(f"✈️ Flights found: {len(all_results)}")
-                print(f"🏆 Returning all {len(all_results)} results to frontend")
+                print("\nSearch completed.")
+                print(f"Total combinations tested: {total_combinations}")
+                print(f"Flights found: {len(all_results)}")
+                print(f"Returning all {len(all_results)} results to frontend")
             
             # Send completion update
             send_progress_update(
@@ -269,12 +271,23 @@ class FlightSearchEngine:
             departure_time = getattr(flight, 'departure', 'N/A')
             arrival_time = getattr(flight, 'arrival', 'N/A')
             
-            # Try to get more detailed attributes that might exist
+            # Debug: Print what we actually get from the API (safe for ASCII consoles)
+            if os.environ.get('PORT') is None:  # Only in local environment
+                safe = lambda value: repr(value)
+                print("DEBUG - Flight object attributes:")
+                print(f"  name: {safe(flight_name)}")
+                print(f"  duration: {safe(duration)}")
+                print(f"  stops: {safe(stops)}")
+                print(f"  departure: {safe(departure_time)}")
+                print(f"  arrival: {safe(arrival_time)}")
+                
+                # Try to get all attributes
+                all_attrs = [attr for attr in dir(flight) if not attr.startswith('_')]
+                print(f"  All flight attributes: {safe(all_attrs)}")
+            
+            # Convert to strings for parsing
             departure_time_str = str(departure_time)
             arrival_time_str = str(arrival_time)
-            
-            # Based on our analysis: round-trip search only returns outbound data
-            # We need to create realistic estimates for the return flight
             
             from datetime import datetime
             
@@ -288,57 +301,87 @@ class FlightSearchEngine:
                 dep_formatted = dep_date
                 ret_formatted = ret_date
             
-            # Since round-trip search only returns outbound data, we'll use that for outbound
-            # and create realistic estimates for return
+            # Parse the airline name - handle multiple airlines
+            airlines = []
+            if ',' in flight_name:
+                airlines = [airline.strip() for airline in flight_name.split(',')]
+            else:
+                airlines = [flight_name.strip()]
             
-            # Parse the outbound data (what we actually have)
-            outbound_airline = flight_name.split(',')[0].strip() if ',' in flight_name else flight_name
-            outbound_duration = str(duration)
-            outbound_departure = departure_time_str
-            outbound_arrival = arrival_time_str
+            outbound_airline = airlines[0] if airlines else 'Unknown'
+            return_airline = airlines[1] if len(airlines) > 1 else outbound_airline
             
             # Parse stops
             stops_value = stops
             if isinstance(stops, str):
-                if 'nonstop' in stops.lower():
+                if 'nonstop' in stops.lower() or 'direct' in stops.lower():
                     stops_value = 0
                 elif 'stop' in stops.lower():
                     try:
-                        stops_value = int(''.join(filter(str.isdigit, stops)))
+                        # Extract number from strings like "1 stop", "2 stops"
+                        import re
+                        numbers = re.findall(r'\d+', stops)
+                        stops_value = int(numbers[0]) if numbers else 1
                     except:
-                        stops_value = 'N/A'
+                        stops_value = 1
             
-            # Extract time from departure string (e.g., "7:00 AM on Tue, Dec 30" -> "7:00 AM")
-            outbound_time = "TBD"
-            if "on " in outbound_departure:
-                outbound_time = outbound_departure.split(" on ")[0]
+            # Better time extraction - handle various formats
+            def extract_time(time_str):
+                if not time_str or time_str == 'N/A':
+                    return 'Not available'
+                
+                time_str = str(time_str)
+                
+                # Handle formats like "7:00 AM on Tue, Dec 30" or "7:00 AM"
+                if " on " in time_str:
+                    return time_str.split(" on ")[0].strip()
+                
+                # Handle formats like "07:00" or "7:00 AM"
+                import re
+                time_match = re.search(r'\d{1,2}:\d{2}\s*(?:AM|PM)?', time_str, re.IGNORECASE)
+                if time_match:
+                    return time_match.group().strip()
+                
+                # If we can't parse it, return as is (might still be useful)
+                return time_str.strip() if len(time_str.strip()) < 20 else 'Not available'
             
-            # Extract time from arrival string
-            outbound_arrival_time = "TBD"
-            if "on " in outbound_arrival:
-                outbound_arrival_time = outbound_arrival.split(" on ")[0]
+            outbound_departure_time = extract_time(departure_time_str)
+            outbound_arrival_time = extract_time(arrival_time_str)
             
-            # Create return flight estimates
-            return_airline = flight_name.split(',')[1].strip() if ',' in flight_name else outbound_airline
+            # Try to extract return flight info from the flight name or other attributes
+            # Sometimes Google includes return info in the name or other fields
+            return_departure_time = 'Not available'
+            return_arrival_time = 'Not available'
+            return_duration = 'Not available'
+            return_stops = 'Not available'
             
-            # Outbound details (what we actually have from Google)
+            # Check if we have any return flight data in the flight object
+            # Some APIs might have return_departure, return_arrival, etc.
+            for attr_name in dir(flight):
+                if not attr_name.startswith('_'):
+                    attr_value = getattr(flight, attr_name, None)
+                    if attr_value and 'return' in attr_name.lower():
+                        if os.environ.get('PORT') is None:  # Only in local environment
+                            print(f"  Found return attribute: {attr_name} = {attr_value}")
+            
+            # Outbound details (what we have from the API)
             outbound_details = {
                 'airline': outbound_airline,
                 'date': dep_formatted,
-                'departure_time': outbound_time,
+                'departure_time': outbound_departure_time,
                 'arrival_time': outbound_arrival_time,
-                'duration': outbound_duration,
+                'duration': str(duration),
                 'stops': stops_value
             }
             
-            # Return flight - Google doesn't provide separate return details
+            # Return flight details - try to be more intelligent about estimates
             return_details = {
                 'airline': return_airline,
                 'date': ret_formatted,
-                'departure_time': 'Not available',
-                'arrival_time': 'Not available',
-                'duration': 'Not available',
-                'stops': 'Not available'
+                'departure_time': return_departure_time,
+                'arrival_time': return_arrival_time,
+                'duration': return_duration,
+                'stops': return_stops
             }
             
             return {
@@ -380,9 +423,8 @@ class FlightSearchEngine:
                 }
             }
 
-    def generate_booking_url(self, from_airport, to_airport, dep_date, ret_date, adults, seat_class, currency='ILS'):
+    def generate_booking_url(self, from_airport, to_airport, dep_date, ret_date, adults, seat_class, currency='ILS', is_one_way=False):
         """Generate Google Flights search URL for the specific route and dates"""
-        base_url = "https://www.google.com/travel/flights"
         
         # Convert currency for Google
         currency_map = {
@@ -394,44 +436,76 @@ class FlightSearchEngine:
         
         google_currency = currency_map.get(currency, 'ILS')
         
-        # Create a more specific search URL using actual dates and route
-        from urllib.parse import urlencode
-        import base64
+        # Format dates for Google Flights URL (YYYY-MM-DD)
+        from datetime import datetime, timedelta
         
-        # Try to create a more specific search by encoding the actual route and dates
-        # Format dates for Google (YYYYMMDD)
-        dep_formatted = dep_date.replace('-', '')
-        ret_formatted = ret_date.replace('-', '')
+        try:
+            dep_dt = datetime.strptime(dep_date, '%Y-%m-%d')
+            dep_formatted = dep_dt.strftime('%Y-%m-%d')
+        except Exception:
+            dep_formatted = dep_date
+
+        try:
+            ret_dt = datetime.strptime(ret_date, '%Y-%m-%d')
+            ret_formatted = ret_dt.strftime('%Y-%m-%d')
+        except Exception:
+            ret_formatted = ret_date
         
-        # Create URL with actual search parameters
-        # Since we don't have flight numbers, we'll create the best possible search URL
+        # Create Google Flights search URL with specific parameters
+        # This creates a direct search URL that will show results for the exact route and dates
         
-        params = {
-            'f': '0',  # Round trip
-            'hl': 'en', 
-            'gl': 'IL',
-            'curr': google_currency,
-            'adults': str(adults) if adults != 1 else '1'
-        }
+        search_params = [
+            f"f={1 if is_one_way else 0}",
+            "source=flightsfromhome",
+            "hl=en",
+            "gl=IL",
+            f"curr={google_currency}",
+        ]
+ 
+        query = (
+            f"hl=en&gl=IL&curr={google_currency}&"
+            f"q=flights+from+{from_airport}+to+{to_airport}+{dep_formatted}"
+        )
+        if not is_one_way:
+            query += f"+{ret_formatted}"
         
-        # Add seat class if specified
+        # Add seat class
         seat_class_map = {
-            'economy': '1',
-            'premium-economy': '2', 
-            'business': '3',
-            'first': '4'
+            'economy': 'c:e',
+            'premium-economy': 'c:p', 
+            'business': 'c:b',
+            'first': 'c:f'
         }
         if seat_class in seat_class_map:
-            params['seat'] = seat_class_map[seat_class]
+            search_params.append(seat_class_map[seat_class])
         
-        # Try to build a search URL that will show results for the specific route and dates
-        # This is the best we can do without flight numbers from the API
-        base_search_url = f"{base_url}?{urlencode(params)}"
+        # Add number of adults
+        if adults > 1:
+            search_params.append(f"adults={adults}")
         
-        # Add a comment in the URL to help identify the search
-        search_comment = f"# Search: {from_airport} to {to_airport}, {dep_date} - {ret_date}"
+        final_url = f"https://www.google.com/travel/flights?{'&'.join(search_params)}&{query}"
         
-        return base_search_url
+        if os.environ.get('PORT') is None:  # Only in local environment
+            print(f"Generated booking URL: {final_url}")
+        
+        return final_url
+
+    def _parse_price_value(self, price):
+        """Convert price representation to a float."""
+        if price is None:
+            return None
+        if isinstance(price, (int, float)):
+            return float(price)
+        try:
+            import re
+            price_str = str(price)
+            matches = re.findall(r'[\d.,]+', price_str)
+            if not matches:
+                return None
+            numeric = matches[0].replace(',', '')
+            return float(numeric)
+        except Exception:
+            return None
 
     def search(self, config):
         """Regular single-date search"""
@@ -482,7 +556,16 @@ class FlightSearchEngine:
                     )
                 ]
                 trip_type = "one-way"
-                booking_url = None
+                booking_url = self.generate_booking_url(
+                    config['from_airport'],
+                    config['to_airport'],
+                    config['departure_date'],
+                    config['departure_date'],
+                    config.get('adults', 1),
+                    config['seat_class'],
+                    config.get('currency', 'ILS'),
+                    is_one_way=True
+                )
             
             # Use get_flights_from_filter to pass currency
             api_currency = config.get('currency', 'ILS')
@@ -547,6 +630,771 @@ class FlightSearchEngine:
                 'search_type': 'regular'
             }
 
+    def search_multi_city(self, config):
+        """Dispatch multi-city search based on the requested mode."""
+        mode = config.get('multi_city_mode', 'multi-city-range')
+        if mode == 'multi-city-open-jaw':
+            return self._search_multi_city_open_jaw(config)
+        if mode == 'multi-city-range' or (config.get('start_period') and config.get('end_period')):
+            return self._search_multi_city_range(config)
+        return self._search_multi_city_specific(config)
+
+    def _search_multi_city_specific(self, config):
+        """Handle multi-city search when exact dates are provided."""
+        from datetime import datetime
+
+        try:
+            leg1_from = config['leg1_from']
+            leg1_to = config['leg1_to'] 
+            leg1_date = config['leg1_date']
+            
+            leg2_from = config['leg2_from']
+            leg2_to = config['leg2_to']
+            leg2_date = config['leg2_date']
+            leg2_flexibility = int(config.get('leg2_flexibility', 1))
+            
+            leg3_from = config['leg3_from']
+            leg3_to = config['leg3_to']
+            leg3_date = config['leg3_date']
+            
+            adults = int(config.get('adults', 1))
+            children = int(config.get('children', 0))
+            seat_class = config.get('seat_class', 'economy')
+            max_stops = int(config.get('max_stops', -1))
+            currency = config.get('currency', 'ILS')
+            
+            if max_stops == -1:
+                max_stops = 2
+                
+            passengers = self.Passengers(
+                adults=adults,
+                children=children,
+            )
+            
+            api_currency_map = {
+                'ILS': 'ILS',
+                'USD': 'USD', 
+                'EUR': 'EUR',
+                'GBP': 'GBP'
+            }
+            api_currency = api_currency_map.get(currency, 'ILS')
+            
+            currency_symbol_map = {
+                'ILS': '₪',
+                'USD': '$',
+                'EUR': '€',
+                'GBP': '£'
+            }
+            currency_symbol = currency_symbol_map.get(currency, currency)
+
+            print("Multi-City Specific Search:")
+            print(f"   Leg 1: {leg1_from} -> {leg1_to} on {leg1_date}")
+            print(f"   Leg 2: {leg2_from} -> {leg2_to} on {leg2_date} (+/-{leg2_flexibility} days)")
+            print(f"   Leg 3: {leg3_from} -> {leg3_to} on {leg3_date}")
+            
+            try:
+                datetime.strptime(leg1_date, '%Y-%m-%d')
+                datetime.strptime(leg2_date, '%Y-%m-%d')
+                datetime.strptime(leg3_date, '%Y-%m-%d')
+            except Exception as date_error:
+                return {
+                    'success': False,
+                    'error': f'Invalid date format provided: {date_error}',
+                    'flights': [],
+                    'total_found': 0,
+                    'search_type': 'multi_city'
+                }
+
+            all_combinations = []
+            base_leg2_date = datetime.strptime(leg2_date, '%Y-%m-%d')
+            leg2_dates = [
+                (base_leg2_date + timedelta(days=offset)).strftime('%Y-%m-%d')
+                for offset in range(-leg2_flexibility, leg2_flexibility + 1)
+            ]
+            
+            total_combinations = len(leg2_dates)
+
+            if total_combinations == 0:
+                send_progress_update(
+                    current=0,
+                    total=0,
+                    current_dates="No valid midpoint dates",
+                    status="completed",
+                    flights_found=0
+                )
+                return {
+                    'success': True,
+                    'flights': [],
+                    'total_found': 0,
+                    'total_combinations_tested': 0,
+                    'search_type': 'multi_city',
+                    'currency': currency
+                }
+
+            print(f"   Testing {total_combinations} date combinations for leg 2...")
+            
+            for idx, leg2_date_option in enumerate(leg2_dates):
+                try:
+                    combination_label = f"{leg1_date} -> {leg2_date_option} -> {leg3_date}"
+                    send_progress_update(
+                        current=idx + 1,
+                        total=total_combinations,
+                        current_dates=combination_label,
+                        status="searching",
+                        flights_found=len(all_combinations)
+                    )
+
+                    leg1_flights = self._fetch_one_way_flights(
+                        leg1_from,
+                        leg1_to,
+                        leg1_date,
+                        passengers,
+                        seat_class,
+                        max_stops,
+                        api_currency
+                    )
+
+                    if not leg1_flights:
+                        continue
+
+                    leg2_flights = self._fetch_one_way_flights(
+                        leg2_from,
+                        leg2_to,
+                        leg2_date_option,
+                        passengers,
+                        seat_class,
+                        max_stops,
+                        api_currency
+                    )
+
+                    if not leg2_flights:
+                        continue
+
+                    leg3_flights = self._fetch_one_way_flights(
+                        leg3_from,
+                        leg3_to,
+                        leg3_date,
+                        passengers,
+                        seat_class,
+                        max_stops,
+                        api_currency
+                    )
+
+                    if not leg3_flights:
+                        continue
+
+                    for leg1_flight in leg1_flights[:5]:
+                        for leg2_flight in leg2_flights[:5]:
+                            for leg3_flight in leg3_flights[:5]:
+                                price1 = self._parse_price_value(getattr(leg1_flight, 'price', None))
+                                price2 = self._parse_price_value(getattr(leg2_flight, 'price', None))
+                                price3 = self._parse_price_value(getattr(leg3_flight, 'price', None))
+
+                                if any(price is None for price in (price1, price2, price3)):
+                                    continue
+
+                                combination = {
+                                    'total_price': price1 + price2 + price3,
+                                    'currency_symbol': currency_symbol,
+                                    'leg1': self._build_leg_details(leg1_from, leg1_to, leg1_date, leg1_flight, price1),
+                                    'leg2': self._build_leg_details(leg2_from, leg2_to, leg2_date_option, leg2_flight, price2),
+                                    'leg3': self._build_leg_details(leg3_from, leg3_to, leg3_date, leg3_flight, price3),
+                                    'trip_summary': {
+                                        'start_date': leg1_date,
+                                        'mid_date': leg2_date_option,
+                                        'return_date': leg3_date
+                                    }
+                                }
+                                all_combinations.append(combination)
+
+                        if all_combinations:
+                            send_progress_update(
+                                current=idx + 1,
+                                total=total_combinations,
+                                current_dates=combination_label,
+                                status="found_flights",
+                                flights_found=len(all_combinations)
+                            )
+
+                except Exception as e:
+                    print(f"   Error processing leg 2 date {leg2_date_option}: {e}")
+                    send_progress_update(
+                        current=idx + 1,
+                        total=total_combinations,
+                        current_dates=f"{leg1_date} -> {leg2_date_option} -> {leg3_date}",
+                        status="error",
+                        flights_found=len(all_combinations)
+                    )
+                    continue
+
+            all_combinations.sort(key=lambda x: x['total_price'])
+
+            print(f"[OK] Found {len(all_combinations)} multi-city combinations (specific dates)")
+
+            send_progress_update(
+                current=total_combinations,
+                total=total_combinations,
+                current_dates="Search completed!",
+                status="completed",
+                flights_found=len(all_combinations)
+            )
+
+            return {
+                'success': True,
+                'flights': all_combinations,
+                'total_found': len(all_combinations),
+                'total_combinations_tested': total_combinations,
+                'search_type': 'multi_city',
+                'currency': currency
+            }
+
+        except Exception as e:
+            print(f"[ERROR] Multi-city specific search error: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'flights': [],
+                'total_found': 0,
+                'search_type': 'multi_city'
+            }
+
+    def _search_multi_city_range(self, config):
+        """Handle multi-city search over a date range with flexible mid-point."""
+        from datetime import datetime, timedelta
+
+        try:
+            leg1_from = config['leg1_from']
+            leg1_to = config['leg1_to']
+            leg2_from = config['leg2_from']
+            leg2_to = config['leg2_to']
+            leg3_from = config['leg3_from']
+            leg3_to = config['leg3_to']
+
+            adults = int(config.get('adults', 1))
+            children = int(config.get('children', 0))
+            seat_class = config.get('seat_class', 'economy')
+            max_stops = int(config.get('max_stops', -1))
+            currency = config.get('currency', 'ILS')
+
+            if max_stops == -1:
+                max_stops = 2
+
+            passengers = self.Passengers(
+                adults=adults,
+                children=children,
+            )
+
+            start_period = config.get('start_period')
+            end_period = config.get('end_period')
+
+            if not start_period or not end_period:
+                return {
+                    'success': False,
+                    'error': 'Missing date range for multi-city search',
+                    'flights': [],
+                    'total_found': 0,
+                    'search_type': 'multi_city'
+                }
+
+            try:
+                start_date = datetime.strptime(start_period, '%Y-%m-%d')
+                end_date = datetime.strptime(end_period, '%Y-%m-%d')
+            except Exception as date_error:
+                return {
+                    'success': False,
+                    'error': f'Invalid range dates: {date_error}',
+                    'flights': [],
+                    'total_found': 0,
+                    'search_type': 'multi_city'
+                }
+
+            min_days = max(3, int(config.get('min_vacation_days', 7)))
+            max_days = max(min_days, int(config.get('max_vacation_days', min_days)))
+            leg2_target_day = max(2, int(config.get('leg2_target_day', 8)))
+            leg2_flexibility = max(0, int(config.get('leg2_flexibility', 1)))
+
+            api_currency_map = {
+                'ILS': 'ILS',
+                'USD': 'USD',
+                'EUR': 'EUR',
+                'GBP': 'GBP'
+            }
+            api_currency = api_currency_map.get(currency, 'ILS')
+
+            currency_symbol_map = {
+                'ILS': '₪',
+                'USD': '$',
+                'EUR': '€',
+                'GBP': '£'
+            }
+            currency_symbol = currency_symbol_map.get(currency, currency)
+
+            print("Multi-City Range Search:")
+            print(f"   Start period: {start_period} -> {end_period}")
+            print(f"   Trip length: {min_days}-{max_days} days")
+            print(f"   Mid-trip target day: {leg2_target_day} +/- {leg2_flexibility}")
+
+            combinations_to_test = []
+            current_date = start_date
+            while current_date <= end_date:
+                for total_days in range(min_days, max_days + 1):
+                    return_date = current_date + timedelta(days=total_days)
+                    if return_date > end_date:
+                        continue
+                        
+                    mid_options = []
+                    for offset in range(-leg2_flexibility, leg2_flexibility + 1):
+                        mid_day = leg2_target_day + offset
+                        if mid_day < 2 or mid_day >= total_days:
+                            continue
+                        mid_date = current_date + timedelta(days=mid_day - 1)
+                        if mid_date >= return_date:
+                            continue
+                        mid_options.append((mid_day, mid_date))
+
+                    if mid_options:
+                        combinations_to_test.append({
+                            'start': current_date,
+                            'return': return_date,
+                            'total_days': total_days,
+                            'mid_options': mid_options
+                        })
+
+                current_date += timedelta(days=1)
+
+            total_combinations = sum(len(item['mid_options']) for item in combinations_to_test)
+
+            if total_combinations == 0:
+                send_progress_update(
+                    current=0,
+                    total=0,
+                    current_dates="No valid multi-city combinations",
+                    status="completed",
+                    flights_found=0
+                )
+                return {
+                    'success': True,
+                    'flights': [],
+                    'total_found': 0,
+                    'total_combinations_tested': 0,
+                    'search_type': 'multi_city',
+                    'currency': currency
+                }
+
+            send_progress_update(
+                current=0,
+                total=total_combinations,
+                current_dates="Preparing multi-city combinations...",
+                status="preparing",
+                flights_found=0
+            )
+
+            print(f"   Total combinations to test: {total_combinations}")
+
+            all_combinations = []
+            processed = 0
+
+            for combo in combinations_to_test:
+                start_dt = combo['start']
+                return_dt = combo['return']
+
+                for mid_day, mid_dt in combo['mid_options']:
+                    processed += 1
+
+                    leg1_date = start_dt.strftime('%Y-%m-%d')
+                    leg2_date = mid_dt.strftime('%Y-%m-%d')
+                    leg3_date = return_dt.strftime('%Y-%m-%d')
+
+                    if os.environ.get('PORT') is None:
+                        print(f"   Combination {processed}/{total_combinations}: {leg1_date} -> {leg2_date} -> {leg3_date}")
+
+                    combination_label = f"{leg1_date} -> {leg2_date} -> {leg3_date}"
+                    send_progress_update(
+                        current=processed,
+                        total=total_combinations,
+                        current_dates=combination_label,
+                        status="searching",
+                        flights_found=len(all_combinations)
+                    )
+
+                    try:
+                        leg1_flights = self._fetch_one_way_flights(
+                            leg1_from,
+                            leg1_to,
+                            leg1_date,
+                            passengers,
+                            seat_class,
+                            max_stops,
+                            api_currency
+                        )
+
+                        if not leg1_flights:
+                            continue
+
+                        leg2_flights = self._fetch_one_way_flights(
+                            leg2_from,
+                            leg2_to,
+                            leg2_date,
+                            passengers,
+                            seat_class,
+                            max_stops,
+                            api_currency
+                        )
+
+                        if not leg2_flights:
+                            continue
+
+                        leg3_flights = self._fetch_one_way_flights(
+                            leg3_from,
+                            leg3_to,
+                            leg3_date,
+                            passengers,
+                            seat_class,
+                            max_stops,
+                            api_currency
+                        )
+
+                        if not leg3_flights:
+                            continue
+
+                        for leg1_flight in leg1_flights[:5]:
+                            for leg2_flight in leg2_flights[:5]:
+                                for leg3_flight in leg3_flights[:5]:
+                                    price1 = self._parse_price_value(getattr(leg1_flight, 'price', None))
+                                    price2 = self._parse_price_value(getattr(leg2_flight, 'price', None))
+                                    price3 = self._parse_price_value(getattr(leg3_flight, 'price', None))
+
+                                    if any(price is None for price in (price1, price2, price3)):
+                                        continue
+
+                                    combination = {
+                                        'total_price': price1 + price2 + price3,
+                                        'currency_symbol': currency_symbol,
+                                        'leg1': self._build_leg_details(leg1_from, leg1_to, leg1_date, leg1_flight, price1),
+                                        'leg2': self._build_leg_details(leg2_from, leg2_to, leg2_date, leg2_flight, price2),
+                                        'leg3': self._build_leg_details(leg3_from, leg3_to, leg3_date, leg3_flight, price3),
+                                        'trip_summary': {
+                                            'start_date': leg1_date,
+                                            'mid_date': leg2_date,
+                                            'return_date': leg3_date,
+                                            'total_days': combo['total_days'],
+                                            'mid_trip_day': mid_day
+                                        }
+                                    }
+                                    all_combinations.append(combination)
+
+                        if all_combinations:
+                            send_progress_update(
+                                current=processed,
+                                total=total_combinations,
+                                current_dates=combination_label,
+                                status="found_flights",
+                                flights_found=len(all_combinations)
+                            )
+
+                    except Exception as leg_error:
+                        print(f"   Error computing combination: {leg_error}")
+                        send_progress_update(
+                            current=processed,
+                            total=total_combinations,
+                            current_dates=combination_label,
+                            status="error",
+                            flights_found=len(all_combinations)
+                        )
+                        continue
+            
+            all_combinations.sort(key=lambda x: x['total_price'])
+            
+            print(f"[OK] Found {len(all_combinations)} multi-city combinations (range mode)")
+            
+            send_progress_update(
+                current=total_combinations,
+                total=total_combinations,
+                current_dates="Search completed!",
+                status="completed",
+                flights_found=len(all_combinations)
+            )
+            
+            return {
+                'success': True,
+                'flights': all_combinations,
+                'total_found': len(all_combinations),
+                'total_combinations_tested': total_combinations,
+                'search_type': 'multi_city',
+                'currency': currency
+            }
+            
+        except Exception as e:
+            print(f"[ERROR] Multi-city range search error: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'flights': [],
+                'total_found': 0,
+                'search_type': 'multi_city'
+            }
+
+    def _search_multi_city_open_jaw(self, config):
+        """Handle open-jaw (two-leg) multi-city search."""
+        from datetime import datetime, timedelta
+
+        try:
+            leg1_from = config['leg1_from']
+            leg1_to = config['leg1_to']
+            leg2_from = config['leg3_from']
+            leg2_to = config['leg3_to']
+
+            adults = int(config.get('adults', 1))
+            children = int(config.get('children', 0))
+            seat_class = config.get('seat_class', 'economy')
+            max_stops = int(config.get('max_stops', -1))
+            currency = config.get('currency', 'ILS')
+
+            if max_stops == -1:
+                max_stops = 2
+
+            passengers = self.Passengers(
+                adults=adults,
+                children=children,
+            )
+
+            start_period = config.get('start_period')
+            end_period = config.get('end_period')
+
+            if not start_period or not end_period:
+                return {
+                    'success': False,
+                    'error': 'Missing date range for open-jaw search',
+                    'flights': [],
+                    'total_found': 0,
+                    'search_type': 'multi_city'
+                }
+
+            try:
+                start_date = datetime.strptime(start_period, '%Y-%m-%d')
+                end_date = datetime.strptime(end_period, '%Y-%m-%d')
+            except Exception as date_error:
+                return {
+                    'success': False,
+                    'error': f'Invalid range dates: {date_error}',
+                    'flights': [],
+                    'total_found': 0,
+                    'search_type': 'multi_city'
+                }
+
+            min_days = max(2, int(config.get('min_vacation_days', 7)))
+            max_days = max(min_days, int(config.get('max_vacation_days', min_days)))
+
+            api_currency_map = {
+                'ILS': 'ILS',
+                'USD': 'USD',
+                'EUR': 'EUR',
+                'GBP': 'GBP'
+            }
+            api_currency = api_currency_map.get(currency, 'ILS')
+
+            currency_symbol_map = {
+                'ILS': '₪',
+                'USD': '$',
+                'EUR': '€',
+                'GBP': '£'
+            }
+            currency_symbol = currency_symbol_map.get(currency, currency)
+
+            print("Open-Jaw Multi-City Search:")
+            print(f"   Start period: {start_period} -> {end_period}")
+            print(f"   Trip length: {min_days}-{max_days} days")
+
+            combinations_to_test = []
+            current_date = start_date
+
+            while current_date <= end_date:
+                for total_days in range(min_days, max_days + 1):
+                    return_date = current_date + timedelta(days=total_days)
+                    if return_date > end_date:
+                        continue
+                    combinations_to_test.append({
+                        'start': current_date,
+                        'return': return_date,
+                        'total_days': total_days
+                    })
+                current_date += timedelta(days=1)
+
+            total_combinations = len(combinations_to_test)
+
+            if total_combinations == 0:
+                send_progress_update(
+                    current=0,
+                    total=0,
+                    current_dates="No valid open-jaw combinations",
+                    status="completed",
+                    flights_found=0
+                )
+                return {
+                    'success': True,
+                    'flights': [],
+                    'total_found': 0,
+                    'total_combinations_tested': 0,
+                    'search_type': 'multi_city',
+                    'currency': currency
+                }
+
+            send_progress_update(
+                current=0,
+                total=total_combinations,
+                current_dates="Preparing open-jaw combinations...",
+                status="preparing",
+                flights_found=0
+            )
+
+            print(f"   Total combinations to test: {total_combinations}")
+
+            all_combinations = []
+
+            for idx, combo in enumerate(combinations_to_test, start=1):
+                leg1_date = combo['start'].strftime('%Y-%m-%d')
+                leg2_date = combo['return'].strftime('%Y-%m-%d')
+                combination_label = f"{leg1_date} -> {leg2_date}"
+
+                send_progress_update(
+                    current=idx,
+                    total=total_combinations,
+                    current_dates=combination_label,
+                    status="searching",
+                    flights_found=len(all_combinations)
+                )
+
+                try:
+                    leg1_flights = self._fetch_one_way_flights(
+                        leg1_from,
+                        leg1_to,
+                        leg1_date,
+                        passengers,
+                        seat_class,
+                        max_stops,
+                        api_currency
+                    )
+
+                    if not leg1_flights:
+                        continue
+
+                    leg2_flights = self._fetch_one_way_flights(
+                        leg2_from,
+                        leg2_to,
+                        leg2_date,
+                        passengers,
+                        seat_class,
+                        max_stops,
+                        api_currency
+                    )
+
+                    if not leg2_flights:
+                        continue
+
+                    for flight_a in leg1_flights[:5]:
+                        for flight_b in leg2_flights[:5]:
+                            price_a = self._parse_price_value(getattr(flight_a, 'price', None))
+                            price_b = self._parse_price_value(getattr(flight_b, 'price', None))
+
+                            if price_a is None or price_b is None:
+                                continue
+
+                            combination = {
+                                'total_price': price_a + price_b,
+                                'currency_symbol': currency_symbol,
+                                'leg1': self._build_leg_details(leg1_from, leg1_to, leg1_date, flight_a, price_a),
+                                'leg2': self._build_leg_details(leg2_from, leg2_to, leg2_date, flight_b, price_b),
+                                'trip_summary': {
+                                    'start_date': leg1_date,
+                                    'return_date': leg2_date,
+                                    'total_days': combo['total_days']
+                                }
+                            }
+                            all_combinations.append(combination)
+
+                    if all_combinations:
+                        send_progress_update(
+                            current=idx,
+                            total=total_combinations,
+                            current_dates=combination_label,
+                            status="found_flights",
+                            flights_found=len(all_combinations)
+                        )
+
+                except Exception as combo_error:
+                    print(f"   Error computing open-jaw combination {combination_label}: {combo_error}")
+                    send_progress_update(
+                        current=idx,
+                        total=total_combinations,
+                        current_dates=combination_label,
+                        status="error",
+                        flights_found=len(all_combinations)
+                    )
+                    continue
+
+            all_combinations.sort(key=lambda x: x['total_price'])
+
+            print(f"[OK] Found {len(all_combinations)} open-jaw combinations")
+
+            send_progress_update(
+                current=total_combinations,
+                total=total_combinations,
+                current_dates="Search completed!",
+                status="completed",
+                flights_found=len(all_combinations)
+            )
+
+            return {
+                'success': True,
+                'flights': all_combinations,
+                'total_found': len(all_combinations),
+                'total_combinations_tested': total_combinations,
+                'search_type': 'multi_city',
+                'currency': currency
+            }
+
+        except Exception as e:
+            print(f"[ERROR] Open-jaw multi-city search error: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'flights': [],
+                'total_found': 0,
+                'search_type': 'multi_city'
+            }
+
+    def _fetch_one_way_flights(self, origin, destination, date_str, passengers, seat_class, max_stops, api_currency):
+        flight_data = self.FlightData(
+            date=date_str,
+            from_airport=origin,
+            to_airport=destination,
+            max_stops=max_stops
+        )
+
+        filter_data = self.TFSData.from_interface(
+            flight_data=[flight_data],
+            trip="one-way",
+            passengers=passengers,
+            seat=seat_class,
+            max_stops=max_stops
+        )
+
+        result = self.get_flights_from_filter(filter_data, currency=api_currency)
+        return result.flights if hasattr(result, 'flights') and result.flights else []
+
+    def _build_leg_details(self, origin, destination, date_str, flight, price):
+        return {
+            'from': origin,
+            'to': destination,
+            'date': date_str,
+            'airline': getattr(flight, 'name', 'Unknown'),
+            'price': price,
+            'duration': getattr(flight, 'duration', 'N/A'),
+            'stops': getattr(flight, 'stops', 'N/A'),
+            'departure': getattr(flight, 'departure', 'N/A'),
+            'arrival': getattr(flight, 'arrival', 'N/A')
+            }
+
 # Initialize search engine
 search_engine = FlightSearchEngine()
 
@@ -572,6 +1420,36 @@ def send_progress_update(current, total, current_dates, status, flights_found=0)
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/test')
+def test():
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head><title>Multi-City Test</title></head>
+    <body>
+        <h1>Multi-City Test Page</h1>
+        <select id="trip_type">
+            <option value="round-trip">Round Trip</option>
+            <option value="one-way">One Way</option>
+            <option value="multi-city">Multi-City (3 destinations)</option>
+        </select>
+        <div id="multi-city-fields" style="display: none; background: yellow; padding: 20px;">
+            <h3>Multi-City Fields Visible!</h3>
+        </div>
+        <script>
+            document.getElementById('trip_type').addEventListener('change', function() {
+                const fields = document.getElementById('multi-city-fields');
+                if (this.value === 'multi-city') {
+                    fields.style.display = 'block';
+                } else {
+                    fields.style.display = 'none';
+                }
+            });
+        </script>
+    </body>
+    </html>
+    '''
 
 @app.route('/progress_status')
 def progress_status():
@@ -657,9 +1535,55 @@ def search_flights_range():
             'search_type': 'date_range'
         })
 
-def open_browser():
+@app.route('/search_multi_city', methods=['POST'])
+def search_multi_city():
+    try:
+        global progress_updates
+        progress_updates = []
+
+        config = {
+            'leg1_from': request.form.get('leg1_from', 'TLV').upper(),
+            'leg1_to': request.form.get('leg1_to', 'HKT').upper(),
+            'leg2_from': request.form.get('leg2_from', 'HKT').upper(),
+            'leg2_to': request.form.get('leg2_to', 'BKK').upper(),
+            'leg2_date': request.form.get('leg2_date'),
+            'leg2_target_day': int(request.form.get('leg2_target_day', 8) or 8),
+            'leg2_flexibility': int(request.form.get('leg2_flexibility', 1) or 1),
+            'leg3_from': request.form.get('leg3_from', 'BKK').upper(),
+            'leg3_to': request.form.get('leg3_to', 'TLV').upper(),
+            'leg3_date': request.form.get('leg3_date'),
+            'leg1_date': request.form.get('leg1_date'),
+            'adults': int(request.form.get('adults', 1) or 1),
+            'children': int(request.form.get('children', 0) or 0),
+            'infants_seat': int(request.form.get('infants_seat', 0) or 0),
+            'infants_lap': int(request.form.get('infants_lap', 0) or 0),
+            'seat_class': request.form.get('seat_class', 'economy'),
+            'max_stops': int(request.form.get('max_stops', -1) or -1),
+            'currency': request.form.get('currency', 'ILS'),
+            'start_period': request.form.get('start_period'),
+            'end_period': request.form.get('end_period'),
+            'min_vacation_days': int(request.form.get('min_vacation_days', 7) or 7),
+            'max_vacation_days': int(request.form.get('max_vacation_days', 21) or 21),
+            'multi_city_mode': request.form.get('multi_city_mode', 'multi-city-range')
+        }
+        
+        result = search_engine.search_multi_city(config)
+        result['config'] = config
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'flights': [],
+            'total_found': 0,
+            'search_type': 'multi_city'
+        })
+
+def open_browser(port):
     time.sleep(1.5)
-    webbrowser.open('http://127.0.0.1:5000')
+    webbrowser.open(f'http://127.0.0.1:{port}')
 
 if __name__ == '__main__':
     import os
@@ -672,10 +1596,10 @@ if __name__ == '__main__':
     if host == '127.0.0.1':
         print("Starting Flight Search Web App...")
         print("Opening browser in 1.5 seconds...")
-        print("Access the app at: http://127.0.0.1:5000")
+        print(f"Access the app at: http://127.0.0.1:{port}")
         
         # Open browser automatically
-        threading.Timer(1.5, open_browser).start()
+        threading.Timer(1.5, open_browser, args=(port,)).start()
     else:
         print(f"Starting Flight Search Web App on port {port}...")
         # Disable verbose logging in production
