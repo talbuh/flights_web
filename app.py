@@ -1,14 +1,23 @@
 #!/usr/bin/env python3
 
-# Set encoding for console output
-import sys
-import io
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+# Safe print function for encoding issues
+def safe_print(*args, **kwargs):
+    try:
+        print(*args, **kwargs)
+    except UnicodeEncodeError:
+        # Fallback to ASCII-safe printing
+        safe_args = []
+        for arg in args:
+            if isinstance(arg, str):
+                safe_args.append(arg.encode('ascii', 'replace').decode('ascii'))
+            else:
+                safe_args.append(str(arg))
+        print(*safe_args, **kwargs)
 
-print("Starting app.py...")
+safe_print("Starting app.py...")
 from flask import Flask, render_template, request, jsonify, Response
 import json
-print("Flask imported successfully")
+safe_print("Flask imported successfully")
 import sys
 import subprocess
 from datetime import datetime, timedelta
@@ -38,9 +47,9 @@ class FlightSearchEngine:
             self.get_flights = get_flights
             self.get_flights_from_filter = get_flights_from_filter
             self.Result = Result
-            print("Flight search engine initialized")
+            safe_print("Flight search engine initialized")
         except ImportError as e:
-            print(f"Installing dependencies: {e}")
+            safe_print(f"Installing dependencies: {e}")
             self.install_dependencies()
             self.setup_dependencies()
     
@@ -49,7 +58,7 @@ class FlightSearchEngine:
             subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
             subprocess.check_call([sys.executable, "-m", "pip", "install", "fast-flights"])
         except subprocess.CalledProcessError:
-            print("Failed to install dependencies")
+            safe_print("Failed to install dependencies")
     
     def search_date_range(self, config):
         """Advanced search across date ranges"""
@@ -78,8 +87,8 @@ class FlightSearchEngine:
             all_combinations = []
             current_date = start_period
             
-            print(f"Searching period: {start_period.date()} to {end_period.date()}")
-            print(f"Vacation length: {min_days}-{max_days} days")
+            safe_print(f"Searching period: {start_period.date()} to {end_period.date()}")
+            safe_print(f"Vacation length: {min_days}-{max_days} days")
             
             while current_date <= end_period:
                 for vacation_days in range(min_days, max_days + 1):
@@ -91,8 +100,8 @@ class FlightSearchEngine:
                 current_date += timedelta(days=3)  # Check every 3 days
             
             total_combinations = len(all_combinations)
-            print(f"Generated {total_combinations} date combinations to test")
-            print(f"Will search ALL combinations (no limit applied)")
+            safe_print(f"Generated {total_combinations} date combinations to test")
+            safe_print(f"Will search ALL combinations (no limit applied)")
             
             # No more limiting - we'll test all combinations!
             
@@ -107,8 +116,8 @@ class FlightSearchEngine:
                 
                 # Only print progress in local environment
                 if os.environ.get('PORT') is None:  # Local environment
-                    print(f"[{bar}] {progress_percent:.1f}% ({i+1}/{total_combinations})")
-                    print(f"Testing: {dep_date} -> {ret_date} ({days} days)")
+                    safe_print(f"[{bar}] {progress_percent:.1f}% ({i+1}/{total_combinations})")
+                    safe_print(f"Testing: {dep_date} -> {ret_date} ({days} days)")
                 
                 # Send real-time progress update
                 send_progress_update(
@@ -190,7 +199,7 @@ class FlightSearchEngine:
                         
                         # Only print in local environment
                         if os.environ.get('PORT') is None:
-                            print(f"  [OK] Found {len(result.flights)} flights, took top {len(top_flights)} for this combination")
+                            safe_print(f"  [OK] Found {len(result.flights)} flights, took top {len(top_flights)} for this combination")
                         
                         # Update progress with found flights
                         send_progress_update(
@@ -204,7 +213,7 @@ class FlightSearchEngine:
                 except Exception as e:
                     # Only print errors in local environment
                     if os.environ.get('PORT') is None:
-                        print(f"  [ERROR] {e}")
+                        safe_print(f"  [ERROR] {e}")
                     
                     # Update progress with error
                     send_progress_update(
@@ -235,10 +244,10 @@ class FlightSearchEngine:
             
             # Only print final results in local environment
             if os.environ.get('PORT') is None:
-                print("\nSearch completed.")
-                print(f"Total combinations tested: {total_combinations}")
-                print(f"Flights found: {len(all_results)}")
-                print(f"Returning all {len(all_results)} results to frontend")
+                safe_print("\nSearch completed.")
+                safe_print(f"Total combinations tested: {total_combinations}")
+                safe_print(f"Flights found: {len(all_results)}")
+                safe_print(f"Returning all {len(all_results)} results to frontend")
             
             # Send completion update
             send_progress_update(
@@ -279,16 +288,16 @@ class FlightSearchEngine:
             # Debug: Print what we actually get from the API (safe for ASCII consoles)
             if os.environ.get('PORT') is None:  # Only in local environment
                 safe = lambda value: repr(value)
-                print("DEBUG - Flight object attributes:")
-                print(f"  name: {safe(flight_name)}")
-                print(f"  duration: {safe(duration)}")
-                print(f"  stops: {safe(stops)}")
-                print(f"  departure: {safe(departure_time)}")
-                print(f"  arrival: {safe(arrival_time)}")
+                safe_print("DEBUG - Flight object attributes:")
+                safe_print(f"  name: {safe(flight_name)}")
+                safe_print(f"  duration: {safe(duration)}")
+                safe_print(f"  stops: {safe(stops)}")
+                safe_print(f"  departure: {safe(departure_time)}")
+                safe_print(f"  arrival: {safe(arrival_time)}")
                 
                 # Try to get all attributes
                 all_attrs = [attr for attr in dir(flight) if not attr.startswith('_')]
-                print(f"  All flight attributes: {safe(all_attrs)}")
+                safe_print(f"  All flight attributes: {safe(all_attrs)}")
             
             # Convert to strings for parsing
             departure_time_str = str(departure_time)
@@ -367,7 +376,7 @@ class FlightSearchEngine:
                     attr_value = getattr(flight, attr_name, None)
                     if attr_value and 'return' in attr_name.lower():
                         if os.environ.get('PORT') is None:  # Only in local environment
-                            print(f"  Found return attribute: {attr_name} = {attr_value}")
+                            safe_print(f"  Found return attribute: {attr_name} = {attr_value}")
             
             # Outbound details (what we have from the API)
             outbound_details = {
@@ -491,7 +500,7 @@ class FlightSearchEngine:
         final_url = f"https://www.google.com/travel/flights?{'&'.join(search_params)}&{query}"
         
         if os.environ.get('PORT') is None:  # Only in local environment
-            print(f"Generated booking URL: {final_url}")
+            safe_print(f"Generated booking URL: {final_url}")
         
         return final_url
 
@@ -692,10 +701,10 @@ class FlightSearchEngine:
             }
             currency_symbol = currency_symbol_map.get(currency, currency)
 
-            print("Multi-City Specific Search:")
-            print(f"   Leg 1: {leg1_from} -> {leg1_to} on {leg1_date}")
-            print(f"   Leg 2: {leg2_from} -> {leg2_to} on {leg2_date} (+/-{leg2_flexibility} days)")
-            print(f"   Leg 3: {leg3_from} -> {leg3_to} on {leg3_date}")
+            safe_print("Multi-City Specific Search:")
+            safe_print(f"   Leg 1: {leg1_from} -> {leg1_to} on {leg1_date}")
+            safe_print(f"   Leg 2: {leg2_from} -> {leg2_to} on {leg2_date} (+/-{leg2_flexibility} days)")
+            safe_print(f"   Leg 3: {leg3_from} -> {leg3_to} on {leg3_date}")
             
             try:
                 datetime.strptime(leg1_date, '%Y-%m-%d')
@@ -736,7 +745,7 @@ class FlightSearchEngine:
                     'currency': currency
                 }
 
-            print(f"   Testing {total_combinations} date combinations for leg 2...")
+            safe_print(f"   Testing {total_combinations} date combinations for leg 2...")
             
             for idx, leg2_date_option in enumerate(leg2_dates):
                 try:
@@ -822,7 +831,7 @@ class FlightSearchEngine:
                             )
 
                 except Exception as e:
-                    print(f"   Error processing leg 2 date {leg2_date_option}: {e}")
+                    safe_print(f"   Error processing leg 2 date {leg2_date_option}: {e}")
                     send_progress_update(
                         current=idx + 1,
                         total=total_combinations,
@@ -834,7 +843,7 @@ class FlightSearchEngine:
 
             all_combinations.sort(key=lambda x: x['total_price'])
 
-            print(f"[OK] Found {len(all_combinations)} multi-city combinations (specific dates)")
+            safe_print(f"[OK] Found {len(all_combinations)} multi-city combinations (specific dates)")
 
             send_progress_update(
                 current=total_combinations,
@@ -854,7 +863,7 @@ class FlightSearchEngine:
             }
 
         except Exception as e:
-            print(f"[ERROR] Multi-city specific search error: {e}")
+            safe_print(f"[ERROR] Multi-city specific search error: {e}")
             return {
                 'success': False,
                 'error': str(e),
@@ -934,10 +943,10 @@ class FlightSearchEngine:
             }
             currency_symbol = currency_symbol_map.get(currency, currency)
 
-            print("Multi-City Range Search:")
-            print(f"   Start period: {start_period} -> {end_period}")
-            print(f"   Trip length: {min_days}-{max_days} days")
-            print(f"   Mid-trip target day: {leg2_target_day} +/- {leg2_flexibility}")
+            safe_print("Multi-City Range Search:")
+            safe_print(f"   Start period: {start_period} -> {end_period}")
+            safe_print(f"   Trip length: {min_days}-{max_days} days")
+            safe_print(f"   Mid-trip target day: {leg2_target_day} +/- {leg2_flexibility}")
 
             combinations_to_test = []
             current_date = start_date
@@ -994,7 +1003,7 @@ class FlightSearchEngine:
                 flights_found=0
             )
 
-            print(f"   Total combinations to test: {total_combinations}")
+            safe_print(f"   Total combinations to test: {total_combinations}")
 
             all_combinations = []
             processed = 0
@@ -1011,7 +1020,7 @@ class FlightSearchEngine:
                     leg3_date = return_dt.strftime('%Y-%m-%d')
 
                     if os.environ.get('PORT') is None:
-                        print(f"   Combination {processed}/{total_combinations}: {leg1_date} -> {leg2_date} -> {leg3_date}")
+                        safe_print(f"   Combination {processed}/{total_combinations}: {leg1_date} -> {leg2_date} -> {leg3_date}")
 
                     combination_label = f"{leg1_date} -> {leg2_date} -> {leg3_date}"
                     send_progress_update(
@@ -1098,7 +1107,7 @@ class FlightSearchEngine:
                             )
 
                     except Exception as leg_error:
-                        print(f"   Error computing combination: {leg_error}")
+                        safe_print(f"   Error computing combination: {leg_error}")
                         send_progress_update(
                             current=processed,
                             total=total_combinations,
@@ -1110,7 +1119,7 @@ class FlightSearchEngine:
             
             all_combinations.sort(key=lambda x: x['total_price'])
             
-            print(f"[OK] Found {len(all_combinations)} multi-city combinations (range mode)")
+            safe_print(f"[OK] Found {len(all_combinations)} multi-city combinations (range mode)")
             
             send_progress_update(
                 current=total_combinations,
@@ -1130,7 +1139,7 @@ class FlightSearchEngine:
             }
             
         except Exception as e:
-            print(f"[ERROR] Multi-city range search error: {e}")
+            safe_print(f"[ERROR] Multi-city range search error: {e}")
             return {
                 'success': False,
                 'error': str(e),
@@ -1206,9 +1215,9 @@ class FlightSearchEngine:
             }
             currency_symbol = currency_symbol_map.get(currency, currency)
 
-            print("Open-Jaw Multi-City Search:")
-            print(f"   Start period: {start_period} -> {end_period}")
-            print(f"   Trip length: {min_days}-{max_days} days")
+            safe_print("Open-Jaw Multi-City Search:")
+            safe_print(f"   Start period: {start_period} -> {end_period}")
+            safe_print(f"   Trip length: {min_days}-{max_days} days")
 
             combinations_to_test = []
             current_date = start_date
@@ -1252,7 +1261,7 @@ class FlightSearchEngine:
                 flights_found=0
             )
 
-            print(f"   Total combinations to test: {total_combinations}")
+            safe_print(f"   Total combinations to test: {total_combinations}")
 
             all_combinations = []
 
@@ -1327,7 +1336,7 @@ class FlightSearchEngine:
                         )
 
                 except Exception as combo_error:
-                    print(f"   Error computing open-jaw combination {combination_label}: {combo_error}")
+                    safe_print(f"   Error computing open-jaw combination {combination_label}: {combo_error}")
                     send_progress_update(
                         current=idx,
                         total=total_combinations,
@@ -1339,7 +1348,7 @@ class FlightSearchEngine:
 
             all_combinations.sort(key=lambda x: x['total_price'])
 
-            print(f"[OK] Found {len(all_combinations)} open-jaw combinations")
+            safe_print(f"[OK] Found {len(all_combinations)} open-jaw combinations")
 
             send_progress_update(
                 current=total_combinations,
@@ -1359,7 +1368,7 @@ class FlightSearchEngine:
             }
 
         except Exception as e:
-            print(f"[ERROR] Open-jaw multi-city search error: {e}")
+            safe_print(f"[ERROR] Open-jaw multi-city search error: {e}")
             return {
                 'success': False,
                 'error': str(e),
@@ -1599,14 +1608,14 @@ if __name__ == '__main__':
     
     # Only show local messages and open browser if running locally
     if host == '127.0.0.1':
-        print("Starting Flight Search Web App...")
-        print("Opening browser in 1.5 seconds...")
-        print(f"Access the app at: http://127.0.0.1:{port}")
+        safe_print("Starting Flight Search Web App...")
+        safe_print("Opening browser in 1.5 seconds...")
+        safe_print(f"Access the app at: http://127.0.0.1:{port}")
         
         # Open browser automatically
         threading.Timer(1.5, open_browser, args=(port,)).start()
     else:
-        print(f"Starting Flight Search Web App on port {port}...")
+        safe_print(f"Starting Flight Search Web App on port {port}...")
         # Disable verbose logging in production
         import logging
         logging.getLogger('werkzeug').setLevel(logging.ERROR)
@@ -1615,6 +1624,6 @@ if __name__ == '__main__':
         # Run Flask app
         app.run(debug=False, host=host, port=port)
     except Exception as e:
-        print(f"Error starting app: {e}")
+        safe_print(f"Error starting app: {e}")
         if host == '127.0.0.1':  # Only wait for input if running locally
             input("Press Enter to exit...")
