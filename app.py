@@ -1438,6 +1438,9 @@ except Exception as e:
 # Global variable to store progress updates
 progress_updates = []
 
+# Global variable to store last search result
+last_search_result = None
+
 def send_progress_update(current, total, current_dates, status, flights_found=0):
     """Send progress update to connected clients"""
     global progress_updates
@@ -1516,6 +1519,15 @@ def progress_status():
             'percentage': 0
         })
 
+@app.route('/search_results')
+def get_search_results():
+    """Get the results of the last search"""
+    global last_search_result
+    if last_search_result is not None:
+        return jsonify(last_search_result)
+    else:
+        return jsonify({'status': 'no_results'})
+
 @app.route('/search', methods=['POST'])
 def search_flights():
     try:
@@ -1533,11 +1545,28 @@ def search_flights():
             'max_stops': int(request.form.get('max_stops', -1)),
             'currency': request.form.get('currency', 'ILS')
         }
-        
-        result = search_engine.search(config)
-        result['config'] = config
-        
-        return jsonify(result)
+
+        # Start search in background thread
+        import threading
+        def background_search():
+            global last_search_result
+            try:
+                result = search_engine.search(config)
+                # Store result for later retrieval (simplified - in real app use a dict with job_id)
+                last_search_result = {'result': result, 'config': config}
+            except Exception as e:
+                print(f"Background search error: {e}")
+                last_search_result = {'error': str(e)}
+
+        thread = threading.Thread(target=background_search)
+        thread.daemon = True
+        thread.start()
+
+        # Return immediately with search started confirmation
+        return jsonify({
+            'status': 'search_started',
+            'message': 'Search started in background'
+        })
         
     except Exception as e:
         return jsonify({

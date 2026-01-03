@@ -2104,6 +2104,19 @@
                 } catch (error) {
                     console.error('Failed to fetch progress:', error);
                 }
+
+                // Check if search results are ready when completed
+                if (data.status === 'completed') {
+                    fetch('/search_results')
+                        .then(response => response.json())
+                        .then(resultData => {
+                            if (resultData.result) {
+                                clearInterval(progressInterval);
+                                displayResults(resultData.result);
+                            }
+                        })
+                        .catch(error => console.error('Failed to fetch results:', error));
+                }
             }, 1000); // Poll every second
         }
 
