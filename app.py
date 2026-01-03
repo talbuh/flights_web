@@ -693,10 +693,10 @@ class FlightSearchEngine:
             api_currency = api_currency_map.get(currency, 'ILS')
             
             currency_symbol_map = {
-                'ILS': '₪',
-                'USD': '$',
-                'EUR': '€',
-                'GBP': '£'
+                'ILS': 'ILS',
+                'USD': 'USD',
+                'EUR': 'EUR',
+                'GBP': 'GBP'
             }
             currency_symbol = currency_symbol_map.get(currency, currency)
 
@@ -935,10 +935,10 @@ class FlightSearchEngine:
             api_currency = api_currency_map.get(currency, 'ILS')
 
             currency_symbol_map = {
-                'ILS': '₪',
-                'USD': '$',
-                'EUR': '€',
-                'GBP': '£'
+                'ILS': 'ILS',
+                'USD': 'USD',
+                'EUR': 'EUR',
+                'GBP': 'GBP'
             }
             currency_symbol = currency_symbol_map.get(currency, currency)
 
@@ -1207,10 +1207,10 @@ class FlightSearchEngine:
             api_currency = api_currency_map.get(currency, 'ILS')
 
             currency_symbol_map = {
-                'ILS': '₪',
-                'USD': '$',
-                'EUR': '€',
-                'GBP': '£'
+                'ILS': 'ILS',
+                'USD': 'USD',
+                'EUR': 'EUR',
+                'GBP': 'GBP'
             }
             currency_symbol = currency_symbol_map.get(currency, currency)
 
@@ -1620,8 +1620,8 @@ def open_browser(port):
 if __name__ == '__main__':
     import os
     
-    # Get port from environment variable (for deployment) or use 8000 for local
-    port = int(os.environ.get('PORT', 8000))
+    # Get port from environment variable (for deployment) or use 5000 for local
+    port = int(os.environ.get('PORT', 5000))
     host = '0.0.0.0' if 'PORT' in os.environ else '127.0.0.1'
     
     # Only show local messages and open browser if running locally
