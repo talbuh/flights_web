@@ -2081,6 +2081,21 @@
                         statusText = ' Completed';
                         clearInterval(progressInterval);
                         document.getElementById('progressText').textContent = 'Search completed! Processing results...';
+
+                        // Fetch final results
+                        fetch('/search_results')
+                            .then(response => response.json())
+                            .then(resultData => {
+                                if (resultData.result) {
+                                    displayResults(resultData.result);
+                                } else if (resultData.error) {
+                                    displayError('Search error: ' + resultData.error);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Failed to fetch results:', error);
+                                displayError('Failed to load search results');
+                            });
                     } else if (data.status === 'preparing') {
                         statusText = ' Preparing...';
                     }
@@ -2103,19 +2118,6 @@
                     
                 } catch (error) {
                     console.error('Failed to fetch progress:', error);
-                }
-
-                // Check if search results are ready when completed
-                if (data.status === 'completed') {
-                    fetch('/search_results')
-                        .then(response => response.json())
-                        .then(resultData => {
-                            if (resultData.result) {
-                                clearInterval(progressInterval);
-                                displayResults(resultData.result);
-                            }
-                        })
-                        .catch(error => console.error('Failed to fetch results:', error));
                 }
             }, 1000); // Poll every second
         }
