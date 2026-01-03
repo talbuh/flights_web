@@ -1647,8 +1647,8 @@ if __name__ == '__main__':
         print("Opening browser in 1.5 seconds...")
         print(f"Access the app at: http://127.0.0.1:{port}")
         
-        # Open browser automatically (disabled for testing)
-        # threading.Timer(1.5, open_browser, args=(port,)).start()
+        # Open browser automatically
+        threading.Timer(1.5, open_browser, args=(port,)).start()
     else:
         print(f"Starting Flight Search Web App on port {port}...")
         # Disable verbose logging in production
