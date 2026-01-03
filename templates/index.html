@@ -2008,7 +2008,16 @@
                 
                 const data = await response.json();
                 
-                // Hide loading UIs
+                // Check if search was started with job_id
+                if (data.job_id && data.status === 'search_started') {
+                    // Save job_id for polling
+                    window.currentJobId = data.job_id;
+                    console.log('Search started with job_id:', data.job_id);
+                    // Progress will be tracked via polling (already set up)
+                    return;
+                }
+                
+                // Hide loading UIs (for backward compatibility or immediate results)
                 loading.style.display = 'none';
                 progressContainer.style.display = 'none';
                 if (progressInterval) {
@@ -2020,7 +2029,7 @@
                 
                 if (data.success) {
                     displayResults(data);
-                } else {
+                } else if (data.error) {
                     displayError(data.error);
                 }
                 
@@ -2057,7 +2066,11 @@
             // Use polling to get progress updates
             progressInterval = setInterval(async () => {
                 try {
-                    const response = await fetch('/progress_status');
+                    // Add job_id if available
+                    const url = window.currentJobId 
+                        ? `/progress_status?job_id=${window.currentJobId}` 
+                        : '/progress_status';
+                    const response = await fetch(url);
                     const data = await response.json();
                     
                     // Update total combinations (first time only)
@@ -2095,7 +2108,10 @@
                         document.getElementById('progressText').textContent = 'Search completed! Processing results...';
 
                         // Fetch final results
-                        fetch('/search_results')
+                        const resultsUrl = window.currentJobId 
+                            ? `/search_results?job_id=${window.currentJobId}` 
+                            : '/search_results';
+                        fetch(resultsUrl)
                             .then(response => response.json())
                             .then(resultData => {
                                 if (resultData.result) {

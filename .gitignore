@@ -63,3 +63,7 @@ venv.bak/
 .DS_Store
 .Trashes
 Thumbs.db
+
+# Database files
+jobs.db
+*.db

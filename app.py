@@ -20,8 +20,104 @@ import webbrowser
 import threading
 import time
 import os
+import sqlite3
+import uuid
 
 logging.basicConfig(level=logging.WARNING)
+
+# Initialize SQLite database for job tracking
+def init_db():
+    """Initialize the jobs database"""
+    conn = sqlite3.connect('jobs.db', check_same_thread=False)
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS jobs (
+            job_id TEXT PRIMARY KEY,
+            status TEXT,
+            current INTEGER,
+            total INTEGER,
+            current_dates TEXT,
+            flights_found INTEGER,
+            percentage REAL,
+            result TEXT,
+            created_at TEXT,
+            updated_at TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def update_job_progress(job_id, current, total, current_dates, status, flights_found=0):
+    """Update job progress in database"""
+    try:
+        conn = sqlite3.connect('jobs.db', check_same_thread=False)
+        c = conn.cursor()
+        percentage = round((current / total) * 100, 1) if total > 0 else 0
+        now = datetime.now().isoformat()
+        c.execute('''
+            INSERT OR REPLACE INTO jobs 
+            (job_id, status, current, total, current_dates, flights_found, percentage, updated_at, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT created_at FROM jobs WHERE job_id = ?), ?))
+        ''', (job_id, status, current, total, current_dates, flights_found, percentage, now, job_id, now))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Error updating job progress: {e}")
+
+def get_job_progress(job_id):
+    """Get job progress from database"""
+    try:
+        conn = sqlite3.connect('jobs.db', check_same_thread=False)
+        c = conn.cursor()
+        c.execute('SELECT status, current, total, current_dates, flights_found, percentage FROM jobs WHERE job_id = ?', (job_id,))
+        row = c.fetchone()
+        conn.close()
+        
+        if row:
+            return {
+                'status': row[0],
+                'current': row[1],
+                'total': row[2],
+                'current_dates': row[3],
+                'flights_found': row[4],
+                'percentage': row[5]
+            }
+        return None
+    except Exception as e:
+        print(f"Error getting job progress: {e}")
+        return None
+
+def save_job_result(job_id, result_data):
+    """Save job result to database"""
+    try:
+        conn = sqlite3.connect('jobs.db', check_same_thread=False)
+        c = conn.cursor()
+        c.execute('UPDATE jobs SET result = ?, status = ? WHERE job_id = ?', 
+                  (json.dumps(result_data), 'completed', job_id))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Error saving job result: {e}")
+
+def get_job_result(job_id):
+    """Get job result from database"""
+    try:
+        conn = sqlite3.connect('jobs.db', check_same_thread=False)
+        c = conn.cursor()
+        c.execute('SELECT result FROM jobs WHERE job_id = ?', (job_id,))
+        row = c.fetchone()
+        conn.close()
+        
+        if row and row[0]:
+            return json.loads(row[0])
+        return None
+    except Exception as e:
+        print(f"Error getting job result: {e}")
+        return None
+
+# Initialize database on startup
+init_db()
+print("Database initialized")
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -537,7 +633,7 @@ class FlightSearchEngine:
         except Exception:
             return None
 
-    def search(self, config):
+    def search(self, config, job_id=None):
         """Regular single-date search"""
         try:
             passengers = self.Passengers(
@@ -1441,21 +1537,26 @@ progress_updates = []
 # Global variable to store last search result
 last_search_result = None
 
-def send_progress_update(current, total, current_dates, status, flights_found=0):
-    """Send progress update to connected clients"""
-    global progress_updates
-    update = {
-        'current': current,
-        'total': total,
-        'current_dates': current_dates,
-        'status': status,
-        'flights_found': flights_found,
-        'percentage': round((current / total) * 100, 1) if total > 0 else 0
-    }
-    progress_updates.append(update)
-    # Keep only last 100 updates
-    if len(progress_updates) > 100:
-        progress_updates = progress_updates[-100:]
+def send_progress_update(current, total, current_dates, status, flights_found=0, job_id=None):
+    """Send progress update to database (if job_id provided) or global variable"""
+    if job_id:
+        # Update database for persistent storage
+        update_job_progress(job_id, current, total, current_dates, status, flights_found)
+    else:
+        # Fallback to global variable (for backward compatibility)
+        global progress_updates
+        update = {
+            'current': current,
+            'total': total,
+            'current_dates': current_dates,
+            'status': status,
+            'flights_found': flights_found,
+            'percentage': round((current / total) * 100, 1) if total > 0 else 0
+        }
+        progress_updates.append(update)
+        # Keep only last 100 updates
+        if len(progress_updates) > 100:
+            progress_updates = progress_updates[-100:]
 
 @app.route('/')
 def index():
@@ -1505,10 +1606,29 @@ def test():
 
 @app.route('/progress_status')
 def progress_status():
-    """Get current progress status"""
-    global progress_updates
-    if progress_updates:
-        return jsonify(progress_updates[-1])  # Return latest update
+    """Get current progress status by job_id"""
+    job_id = request.args.get('job_id')
+    
+    if not job_id:
+        # Fallback to old behavior for backward compatibility
+        global progress_updates
+        if progress_updates:
+            return jsonify(progress_updates[-1])
+        else:
+            return jsonify({
+                'current': 0,
+                'total': 0,
+                'current_dates': 'Preparing...',
+                'status': 'preparing',
+                'flights_found': 0,
+                'percentage': 0
+            })
+    
+    # Get progress from database
+    progress = get_job_progress(job_id)
+    
+    if progress:
+        return jsonify(progress)
     else:
         return jsonify({
             'current': 0,
@@ -1521,16 +1641,31 @@ def progress_status():
 
 @app.route('/search_results')
 def get_search_results():
-    """Get the results of the last search"""
-    global last_search_result
-    if last_search_result is not None:
-        return jsonify(last_search_result)
+    """Get the results of a specific job"""
+    job_id = request.args.get('job_id')
+    
+    if not job_id:
+        # Fallback to old behavior
+        global last_search_result
+        if last_search_result is not None:
+            return jsonify(last_search_result)
+        else:
+            return jsonify({'status': 'no_results'})
+    
+    # Get result from database
+    result = get_job_result(job_id)
+    
+    if result:
+        return jsonify(result)
     else:
         return jsonify({'status': 'no_results'})
 
 @app.route('/search', methods=['POST'])
 def search_flights():
     try:
+        # Generate unique job ID
+        job_id = str(uuid.uuid4())
+        
         config = {
             'from_airport': request.form.get('from_airport', 'TLV').upper(),
             'to_airport': request.form.get('to_airport', 'BKK').upper(),
@@ -1546,25 +1681,29 @@ def search_flights():
             'currency': request.form.get('currency', 'ILS')
         }
 
+        # Initialize job in database
+        update_job_progress(job_id, 0, 0, 'Initializing...', 'preparing', 0)
+
         # Start search in background thread
         import threading
         def background_search():
-            global last_search_result
             try:
-                result = search_engine.search(config)
-                # Store result for later retrieval (simplified - in real app use a dict with job_id)
-                last_search_result = {'result': result, 'config': config}
+                result = search_engine.search(config, job_id=job_id)
+                # Store result in database
+                save_job_result(job_id, {'result': result, 'config': config})
             except Exception as e:
                 print(f"Background search error: {e}")
-                last_search_result = {'error': str(e)}
+                update_job_progress(job_id, 0, 0, f'Error: {str(e)}', 'error', 0)
+                save_job_result(job_id, {'error': str(e)})
 
         thread = threading.Thread(target=background_search)
         thread.daemon = True
         thread.start()
 
-        # Return immediately with search started confirmation
+        # Return job_id to client
         return jsonify({
             'status': 'search_started',
+            'job_id': job_id,
             'message': 'Search started in background'
         })
         
