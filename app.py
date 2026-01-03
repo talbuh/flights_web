@@ -1,25 +1,17 @@
 #!/usr/bin/env python3
 
-# Safe print function to handle Unicode encoding issues
-def safe_print(*args, **kwargs):
-    """Print function that handles Unicode encoding errors gracefully"""
-    try:
-        print(*args, **kwargs)
-    except UnicodeEncodeError:
-        # Convert problematic arguments to safe ASCII
-        safe_args = []
-        for arg in args:
-            if isinstance(arg, str):
-                # Replace problematic Unicode characters
-                safe_args.append(arg.encode('ascii', 'replace').decode('ascii'))
-            else:
-                safe_args.append(str(arg))
-        print(*safe_args, **kwargs)
+# Configure stdout for proper Unicode handling
+import sys
+try:
+    # Force UTF-8 encoding for stdout to handle Unicode properly
+    sys.stdout.reconfigure(encoding='utf-8')
+except:
+    pass  # Fallback if reconfigure not available
 
 print("Starting app.py...")
 from flask import Flask, render_template, request, jsonify, Response
 import json
-safe_print("Flask imported successfully")
+print("Flask imported successfully")
 import sys
 import subprocess
 from datetime import datetime, timedelta
@@ -49,7 +41,7 @@ class FlightSearchEngine:
             self.get_flights = get_flights
             self.get_flights_from_filter = get_flights_from_filter
             self.Result = Result
-            safe_print("Flight search engine initialized")
+            print("Flight search engine initialized")
         except ImportError as e:
             print(f"Installing dependencies: {e}")
             self.install_dependencies()
@@ -312,16 +304,16 @@ class FlightSearchEngine:
                         else:
                             return str(value).encode('ascii', 'replace').decode('ascii')
 
-                safe_print("DEBUG - Flight object attributes:")
-                safe_print(f"  name: {safe_repr(flight_name)}")
-                safe_print(f"  duration: {safe_repr(duration)}")
-                safe_print(f"  stops: {safe_repr(stops)}")
-                safe_print(f"  departure: {safe_repr(departure_time)}")
-                safe_print(f"  arrival: {safe_repr(arrival_time)}")
+                print("DEBUG - Flight object attributes:")
+                print(f"  name: {repr(flight_name)}")
+                print(f"  duration: {repr(duration)}")
+                print(f"  stops: {repr(stops)}")
+                print(f"  departure: {repr(departure_time)}")
+                print(f"  arrival: {repr(arrival_time)}")
 
                 # Try to get all attributes
                 all_attrs = [attr for attr in dir(flight) if not attr.startswith('_')]
-                safe_print(f"  All flight attributes: {safe_repr(all_attrs)}")
+                print(f"  All flight attributes: {repr(all_attrs)}")
             
             # Convert to strings for parsing
             departure_time_str = str(departure_time)
