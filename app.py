@@ -1439,11 +1439,17 @@ def send_progress_update(current, total, current_dates, status, flights_found=0)
 
 @app.route('/')
 def index():
+    print("DEBUG: index() called")
     try:
-        return render_template('index.html')
+        print("DEBUG: About to render template")
+        result = render_template('index.html')
+        print(f"DEBUG: Template rendered, length: {len(result)}")
+        print(f"DEBUG: First 100 chars: {repr(result[:100])}")
+        return result
     except Exception as e:
-        print(f"Template error: {e}")
+        print(f"DEBUG: Template error: {e}")
         import traceback
+        print("DEBUG: Full traceback:")
         traceback.print_exc()
         return f"Template error: {e}", 500
 
@@ -1614,8 +1620,8 @@ def open_browser(port):
 if __name__ == '__main__':
     import os
     
-    # Get port from environment variable (for deployment) or use 5000 for local
-    port = int(os.environ.get('PORT', 5000))
+    # Get port from environment variable (for deployment) or use 8000 for local
+    port = int(os.environ.get('PORT', 8000))
     host = '0.0.0.0' if 'PORT' in os.environ else '127.0.0.1'
     
     # Only show local messages and open browser if running locally
@@ -1624,8 +1630,8 @@ if __name__ == '__main__':
         print("Opening browser in 1.5 seconds...")
         print(f"Access the app at: http://127.0.0.1:{port}")
         
-        # Open browser automatically
-        threading.Timer(1.5, open_browser, args=(port,)).start()
+        # Open browser automatically (disabled for testing)
+        # threading.Timer(1.5, open_browser, args=(port,)).start()
     else:
         print(f"Starting Flight Search Web App on port {port}...")
         # Disable verbose logging in production
@@ -1634,7 +1640,14 @@ if __name__ == '__main__':
     
     try:
         # Run Flask app
-        app.run(debug=False, host=host, port=port)
+        print(f"About to run app on {host}:{port}")
+        # Force debug for local development
+        debug_mode = True if host == '127.0.0.1' else False
+        app.run(debug=debug_mode, host=host, port=port)
+    except Exception as e:
+        print(f"Error running app: {e}")
+        import traceback
+        traceback.print_exc()
     except Exception as e:
         print(f"Error starting app: {e}")
         if host == '127.0.0.1':  # Only wait for input if running locally
