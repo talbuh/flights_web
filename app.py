@@ -51,7 +51,20 @@ class FlightSearchEngine:
         except ImportError as e:
             safe_print(f"Installing dependencies: {e}")
             self.install_dependencies()
-            self.setup_dependencies()
+            # After installation, try to import again
+            try:
+                from fast_flights.flights_impl import FlightData, Passengers, TFSData
+                from fast_flights.core import get_flights, get_flights_from_filter
+                from fast_flights.schema import Result
+                self.FlightData = FlightData
+                self.Passengers = Passengers
+                self.TFSData = TFSData
+                self.get_flights = get_flights
+                self.get_flights_from_filter = get_flights_from_filter
+                self.Result = Result
+                safe_print("Flight search engine initialized after installation")
+            except ImportError as e2:
+                safe_print(f"Failed to initialize after installation: {e2}")
     
     def install_dependencies(self):
         try:
