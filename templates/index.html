@@ -906,7 +906,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>✈️ Flight Search</h1>
+            <h1> Flight Search</h1>
             <p>Find the best flights with real-time pricing</p>
         </div>
 
@@ -915,17 +915,17 @@
                 <h3>Search Type</h3>
                 <div class="route-buttons">
                     <button type="button" class="route-btn active" id="specificDatesBtn">Specific Dates</button>
-                    <button type="button" class="route-btn" id="dateRangeBtn">🔥 Smart Date Range</button>
+                    <button type="button" class="route-btn" id="dateRangeBtn"> Smart Date Range</button>
                 </div>
             </div>
 
             <div class="route-section">
                 <h3>Popular Routes</h3>
                 <div class="route-buttons">
-                    <button type="button" class="route-btn" data-from="TLV" data-to="BKK">TLV → Bangkok</button>
-                    <button type="button" class="route-btn" data-from="TLV" data-to="JFK">TLV → New York</button>
-                    <button type="button" class="route-btn" data-from="TLV" data-to="LHR">TLV → London</button>
-                    <button type="button" class="route-btn" data-from="TLV" data-to="CDG">TLV → Paris</button>
+                    <button type="button" class="route-btn" data-from="TLV" data-to="BKK">TLV > Bangkok</button>
+                    <button type="button" class="route-btn" data-from="TLV" data-to="JFK">TLV > New York</button>
+                    <button type="button" class="route-btn" data-from="TLV" data-to="LHR">TLV > London</button>
+                    <button type="button" class="route-btn" data-from="TLV" data-to="CDG">TLV > Paris</button>
                 </div>
             </div>
 
@@ -988,7 +988,7 @@
                 <!-- Multi-City Fields (hidden by default) -->
                 <div id="multi-city-fields" class="multi-city-section">
                     <div class="route-section">
-                        <h3>🛫 Multi-City Itinerary</h3>
+                        <h3> Multi-City Itinerary</h3>
                         <p class="multi-city-note">
                             Build your itinerary step-by-step. Each leg automatically chains from the previous destination and stays easy to adjust.
                         </p>
@@ -1005,7 +1005,7 @@
                                 <div class="multi-leg-header">
                                     <span class="multi-leg-number">1</span>
                                     <div class="multi-leg-title">
-                                        <strong>Leg 1 · Depart from Home</strong>
+                                        <strong>Leg 1 - Depart from Home</strong>
                                         <span>Set your origin and first destination</span>
                                     </div>
                                     <button type="button" class="multi-leg-swap" data-swap-leg="1">Swap</button>
@@ -1029,7 +1029,7 @@
                                 <div class="multi-leg-header">
                                     <span class="multi-leg-number">2</span>
                                     <div class="multi-leg-title">
-                                        <strong>Leg 2 · יעד האמצע</strong>
+                                        <strong>Leg 2 - Midpoint Stop</strong>
                                         <span>Dial in the midpoint timing and flexibility</span>
                                     </div>
                                     <button type="button" class="multi-leg-swap" data-swap-leg="2">Swap</button>
@@ -1052,14 +1052,14 @@
                                         <input type="number" id="leg2_target_day" name="leg2_target_day" value="8" min="2" max="60">
                                     </div>
                                     <div class="form-group">
-                                        <label for="leg2_flexibility">Flexibility (± days)</label>
+                                        <label for="leg2_flexibility">Flexibility (+ days)</label>
                                         <select id="leg2_flexibility" name="leg2_flexibility">
                                             <option value="0">No flexibility</option>
-                                            <option value="1" selected>± 1 day</option>
-                                            <option value="2">± 2 days</option>
-                                            <option value="3">± 3 days</option>
-                                            <option value="4">± 4 days</option>
-                                            <option value="5">± 5 days</option>
+                                            <option value="1" selected>+ 1 day</option>
+                                            <option value="2">+ 2 days</option>
+                                            <option value="3">+ 3 days</option>
+                                            <option value="4">+ 4 days</option>
+                                            <option value="5">+ 5 days</option>
                                         </select>
                                     </div>
                                 </div>
@@ -1071,7 +1071,7 @@
                                 <div class="multi-leg-header">
                                     <span class="multi-leg-number">3</span>
                                     <div class="multi-leg-title">
-                                        <strong>Leg 3 · Return Home</strong>
+                                        <strong>Leg 3 - Return Home</strong>
                                         <span>Close out the itinerary from your final stop</span>
                                     </div>
                                     <button type="button" class="multi-leg-swap" data-swap-leg="3">Swap</button>
@@ -1131,16 +1131,16 @@
                 <div class="form-group">
                     <label for="currency">Currency</label>
                     <select id="currency" name="currency">
-                        <option value="ILS">₪ Israeli Shekel (ILS)</option>
+                        <option value="ILS">NIS Israeli Shekel (ILS)</option>
                         <option value="USD">$ US Dollar (USD)</option>
-                        <option value="EUR">€ Euro (EUR)</option>
-                        <option value="GBP">£ British Pound (GBP)</option>
+                        <option value="EUR">EUR Euro (EUR)</option>
+                        <option value="GBP">GBP British Pound (GBP)</option>
                     </select>
                 </div>
             </div>
 
             <button type="submit" class="search-btn" id="searchBtn">
-                🔍 Search Flights
+                 Search Flights
             </button>
         </form>
 
@@ -1151,7 +1151,7 @@
 
         <div class="progress-container" id="progressContainer">
             <div class="progress-header">
-                <h3>🔍 Searching Flight Combinations</h3>
+                <h3> Searching Flight Combinations</h3>
                 <p>Analyzing multiple date combinations to find the best deals...</p>
             </div>
             
@@ -1188,11 +1188,11 @@
         </div>
 
         <div class="calendar-container" id="calendarContainer">
-            <h2>📅 Flight Calendar Visualization</h2>
+            <h2> Flight Calendar Visualization</h2>
             <div class="calendar-controls">
-                <button class="calendar-nav-btn" id="prevMonth">← Previous</button>
+                <button class="calendar-nav-btn" id="prevMonth">< Previous</button>
                 <h3 id="calendarTitle">December 2025</h3>
-                <button class="calendar-nav-btn" id="nextMonth">Next →</button>
+                <button class="calendar-nav-btn" id="nextMonth">Next ></button>
             </div>
             <div class="calendar-grid" id="calendarGrid">
                 <!-- Calendar will be generated by JavaScript -->
@@ -1223,7 +1223,7 @@
             <!-- Filter Panel -->
             <div class="filter-panel" id="filterPanel" style="display: none;">
                 <div class="filter-header">
-                    <h3>🔍 Filter Results</h3>
+                    <h3> Filter Results</h3>
                     <div>
                         <button class="filter-toggle" onclick="toggleFilters()">Hide Filters</button>
                         <button class="clear-filters" onclick="clearAllFilters()">Clear All</button>
@@ -1233,7 +1233,7 @@
                 <div class="filter-content" id="filterContent">
                     <!-- Airlines Filter -->
                     <div class="filter-group">
-                        <h4>✈️ Airlines</h4>
+                        <h4> Airlines</h4>
            <div style="margin-bottom: 10px;">
                <button onclick="deselectAllAirlines()" style="padding: 4px 8px; background: #ddd; color: #666; border: 1px solid #ccc; border-radius: 3px; cursor: pointer; font-size: 0.75em;">
                    Clear All
@@ -1246,18 +1246,18 @@
                     
                     <!-- Price Range Filter -->
                     <div class="filter-group">
-                        <h4>💰 Max Price</h4>
+                        <h4> Max Price</h4>
                         <div class="price-range-slider">
                             <input type="range" id="maxPriceRange" min="0" max="10000" value="10000" oninput="updatePriceFilter()" class="dual-range">
                             <div class="price-range-display">
-                                <span id="maxPriceDisplay">Up to ₪10,000</span>
+                                <span id="maxPriceDisplay">Up to NIS10,000</span>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Duration Filter -->
                     <div class="filter-group">
-                        <h4>⏱️ Flight Duration Range</h4>
+                        <h4> Flight Duration Range</h4>
                         <div class="price-range-slider">
                             <label style="font-size: 0.9em; color: #666;">Min Duration:</label>
                             <input type="range" id="minDurationRange" min="0" max="1440" value="0" oninput="updateDurationFilter()" class="dual-range">
@@ -1271,7 +1271,7 @@
                     
                     <!-- Departure Time Filter -->
                     <div class="filter-group">
-                        <h4>🛫 Flight Times</h4>
+                        <h4> Flight Times</h4>
                         <div class="price-range-slider">
                             <label style="font-size: 0.9em; color: #666;">Max Departure Time:</label>
                             <input type="range" id="maxDepartureTimeRange" min="0" max="1440" value="1440" oninput="updateFlightTimesFilter()" class="dual-range">
@@ -1285,7 +1285,7 @@
                     
                     <!-- Results Display Limit -->
                     <div class="filter-group">
-                        <h4>📊 Show Results</h4>
+                        <h4> Show Results</h4>
                         <div class="airline-filters">
                             <select id="displayLimit" onchange="applyFilters()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                                 <option value="25">Show 25 results</option>
@@ -1589,14 +1589,14 @@
         const leg3NumberBadge = leg3Card?.querySelector('.multi-leg-number');
         const leg3TitleStrong = leg3Card?.querySelector('.multi-leg-title strong');
         const leg3TitleSpan = leg3Card?.querySelector('.multi-leg-title span');
-        const leg3TitleStrongDefault = leg3TitleStrong?.textContent || 'Leg 3 · Return Home';
+        const leg3TitleStrongDefault = leg3TitleStrong?.textContent || 'Leg 3 - Return Home';
         const leg3TitleSpanDefault = leg3TitleSpan?.textContent || 'Close out the itinerary from your final stop';
         const leg2TitleStrong = leg2Card?.querySelector('.multi-leg-title strong');
         const leg2TitleSpan = leg2Card?.querySelector('.multi-leg-title span');
         const leg2NumberBadge = leg2Card?.querySelector('.multi-leg-number');
         const leg1TitleStrong = document.querySelector('#leg1Card .multi-leg-title strong');
         const leg1TitleSpan = document.querySelector('#leg1Card .multi-leg-title span');
-        const leg1TitleStrongDefault = leg1TitleStrong?.textContent || 'Leg 1 · Depart from Home';
+        const leg1TitleStrongDefault = leg1TitleStrong?.textContent || 'Leg 1 - Depart from Home';
         const leg1TitleSpanDefault = leg1TitleSpan?.textContent || 'Set your origin and first destination';
 
         let currentSearchType = 'specific';
@@ -1646,7 +1646,7 @@
 
             if (leg3TitleStrong && leg3TitleSpan) {
                 if (isOpenJaw) {
-                    leg3TitleStrong.textContent = 'Leg 2 · Return Home';
+                    leg3TitleStrong.textContent = 'Leg 2 - Return Home';
                     leg3TitleSpan.textContent = 'Plan the final segment back home';
                 } else {
                     leg3TitleStrong.textContent = leg3TitleStrongDefault;
@@ -1656,7 +1656,7 @@
 
             if (leg2NumberBadge && leg2TitleStrong && leg2TitleSpan) {
                 leg2NumberBadge.textContent = '2';
-                leg2TitleStrong.textContent = 'Leg 2 · יעד האמצע';
+                leg2TitleStrong.textContent = 'Leg 2 - Midpoint Stop';
                 leg2TitleSpan.textContent = 'Dial in the midpoint timing and flexibility';
             }
 
@@ -2028,7 +2028,7 @@
                 displayError('Network error: ' + error.message);
             } finally {
                 searchBtn.disabled = false;
-                searchBtn.textContent = '🔍 Search Flights';
+                searchBtn.textContent = ' Search Flights';
                 document.querySelector('.loading p').textContent = 'Searching for the best flights...';
             }
         });
@@ -2074,17 +2074,17 @@
                     currentDates.textContent = data.current_dates;
                     
                     // Update status with appropriate emoji
-                    let statusText = '🔍 Searching...';
+                    let statusText = ' Searching...';
                     if (data.status === 'found_flights') {
-                        statusText = '✅ Found flights';
+                        statusText = ' Found flights';
                     } else if (data.status === 'error') {
-                        statusText = '❌ Error';
+                        statusText = ' Error';
                     } else if (data.status === 'completed') {
-                        statusText = '🎉 Completed';
+                        statusText = ' Completed';
                         clearInterval(progressInterval);
                         document.getElementById('progressText').textContent = 'Search completed! Processing results...';
                     } else if (data.status === 'preparing') {
-                        statusText = '⏳ Preparing...';
+                        statusText = ' Preparing...';
                     }
                     currentStatus.textContent = statusText;
                     currentSearch.style.display = 'block';
@@ -2117,10 +2117,10 @@
             let flightsForFilters = data.flights || [];
             let flightsForCalendar = data.flights || [];
             const currencySymbols = {
-                'ILS': '₪',
+                'ILS': 'NIS',
                 'USD': '$',
-                'EUR': '€',
-                'GBP': '£'
+                'EUR': 'EUR',
+                'GBP': 'GBP'
             };
             const resultCurrency = data.config?.currency || 'ILS';
             
@@ -2131,10 +2131,10 @@
                 
                 html += `
                     <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                        <h3>✈️ Multi-City Results</h3>
+                        <h3> Multi-City Results</h3>
                         <p>Found ${data.total_found} multi-city combinations, showing ${data.flights.length} results sorted by total price</p>
                         <p style="font-size: 0.9em; opacity: 0.9;">Total prices shown in ${currencySymbol} ${resultCurrency}</p>
-                        <p style="font-size: 0.85em; opacity: 0.85; margin-top: 8px;">Use the airline filters to exclude carriers you don’t want — the list will refill with the next best options automatically.</p>
+                        <p style="font-size: 0.85em; opacity: 0.85; margin-top: 8px;">Use the airline filters to exclude carriers you dont want  the list will refill with the next best options automatically.</p>
                     </div>
                 `;
             } else if (data.search_type === 'date_range') {
@@ -2143,7 +2143,7 @@
                 
                 html += `
                     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                        <h3>🔥 Smart Date Range Results</h3>
+                        <h3> Smart Date Range Results</h3>
                         <p>Found ${data.total_found} flights from ${data.total_combinations_tested} date combinations, showing ${data.flights.length} results sorted by price</p>
                         <p style="font-size: 0.9em; opacity: 0.9;">Prices shown in ${currencySymbol} ${resultCurrency}</p>
                     </div>
@@ -2156,9 +2156,9 @@
                 if (data.price_level) {
                     const levelText = data.price_level.toUpperCase();
                     const levelEmoji = {
-                        'low': '💚',
-                        'typical': '🟡',
-                        'high': '🔴'
+                        'low': '',
+                        'typical': '',
+                        'high': ''
                     };
                     
                     html += `
@@ -2189,7 +2189,7 @@
                         const totalMinutes = legs.reduce((sum, leg) => sum + parseDurationToMinutes(leg ? leg.duration : null), 0);
                         const airlines = legs.map(leg => leg?.airline).filter(Boolean);
                         const uniqueAirlines = airlines.length ? [...new Set(airlines)] : [];
-                        const airlineLabel = uniqueAirlines.length ? uniqueAirlines.join(' · ') : 'Multiple Airlines';
+                        const airlineLabel = uniqueAirlines.length ? uniqueAirlines.join(' - ') : 'Multiple Airlines';
                         const departureDate = flight.leg1?.date || flight.trip_summary?.start_date || '';
                         const returnDate = flight.leg3?.date || flight.trip_summary?.return_date || '';
                         const departureTime = flight.leg1?.departure || 'N/A';
@@ -2239,9 +2239,9 @@
                 data.flights.forEach((flight, index) => {
                     if (data.search_type === 'date_range') {
                         const priceEmoji = {
-                            'low': '💚',
-                            'typical': '🟡', 
-                            'high': '🔴'
+                            'low': '',
+                            'typical': '', 
+                            'high': ''
                         };
                         
                         html += `
@@ -2250,7 +2250,7 @@
                                     <div>
                                         <div class="airline">${flight.airline}</div>
                                         <div style="font-size: 0.9em; color: #666;">
-                                            ${flight.departure_date} → ${flight.return_date} (${flight.vacation_days} days)
+                                            ${flight.departure_date} > ${flight.return_date} (${flight.vacation_days} days)
                                         </div>
                                     </div>
                                     <div>
@@ -2277,7 +2277,7 @@
                                 ${flight.outbound_details && flight.return_details ? `
                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
                                    <div>
-                                       <h4 style="color: #28a745; margin-bottom: 10px;">🛫 Outbound (${flight.outbound_details.date})</h4>
+                                       <h4 style="color: #28a745; margin-bottom: 10px;"> Outbound (${flight.outbound_details.date})</h4>
                                        <div style="font-size: 0.9em; color: #666;">
                                            <div><strong>${flight.outbound_details.airline}</strong></div>
                                            <div>Departure: ${convertTo24Hour(flight.outbound_details.departure_time)}</div>
@@ -2287,7 +2287,7 @@
                                        </div>
                                    </div>
                                    <div>
-                                       <h4 style="color: #dc3545; margin-bottom: 10px;">🛬 Return (${flight.return_details.date})</h4>
+                                       <h4 style="color: #dc3545; margin-bottom: 10px;"> Return (${flight.return_details.date})</h4>
                                        <div style="font-size: 0.9em; color: #666;">
                                            <div><strong>${flight.return_details.airline}</strong></div>
                                            <div>Departure: ${convertTo24Hour(flight.return_details.departure_time)}</div>
@@ -2299,7 +2299,7 @@
                                </div>
                                ${(flight.return_details.departure_time === 'Not available') ? `
                                <div style="background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-top: 10px; font-size: 0.9em;">
-                                   <strong>ℹ️ Note:</strong> Return flight details not available in search results. Click "Book on Google Flights" for complete flight information.
+                                   <strong> Note:</strong> Return flight details not available in search results. Click "Book on Google Flights" for complete flight information.
                                </div>
                                ` : ''}
                                ` : ''}
@@ -2307,7 +2307,7 @@
                                 <div style="margin-top: 15px;">
                                     <a href="${flight.booking_url}" target="_blank" 
                                        style="background: #28a745; color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; display: inline-block; font-weight: 600;">
-                                        🎫 Book on Google Flights
+                                         Book on Google Flights
                                     </a>
                                 </div>
                                 ` : ''}
@@ -2352,7 +2352,7 @@
                                ${flight.outbound_details && flight.return_details ? `
                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
                                    <div>
-                                       <h4 style="color: #28a745; margin-bottom: 10px;">🛫 Outbound (${flight.outbound_details.date})</h4>
+                                       <h4 style="color: #28a745; margin-bottom: 10px;"> Outbound (${flight.outbound_details.date})</h4>
                                        <div style="font-size: 0.9em; color: #666;">
                                            <div><strong>${flight.outbound_details.airline}</strong></div>
                                            <div>Departure: ${convertTo24Hour(flight.outbound_details.departure_time)}</div>
@@ -2362,7 +2362,7 @@
                                        </div>
                                    </div>
                                    <div>
-                                       <h4 style="color: #dc3545; margin-bottom: 10px;">🛬 Return (${flight.return_details.date})</h4>
+                                       <h4 style="color: #dc3545; margin-bottom: 10px;"> Return (${flight.return_details.date})</h4>
                                        <div style="font-size: 0.9em; color: #666;">
                                            <div><strong>${flight.return_details.airline}</strong></div>
                                            <div>Departure: ${convertTo24Hour(flight.return_details.departure_time)}</div>
@@ -2374,7 +2374,7 @@
                                </div>
                                ${(flight.return_details.departure_time === 'Not available') ? `
                                <div style="background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-top: 10px; font-size: 0.9em;">
-                                   <strong>ℹ️ Note:</strong> Return flight details not available in search results. Click "Book on Google Flights" for complete flight information.
+                                   <strong> Note:</strong> Return flight details not available in search results. Click "Book on Google Flights" for complete flight information.
                                </div>
                                ` : ''}
                                ` : ''}
@@ -2382,7 +2382,7 @@
                                 <div style="margin-top: 15px;">
                                     <a href="${flight.booking_url}" target="_blank" 
                                        style="background: #4facfe; color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; display: inline-block; font-weight: 600;">
-                                        🎫 Book on Google Flights
+                                         Book on Google Flights
                                     </a>
                                 </div>
                                 ` : ''}
@@ -2685,16 +2685,16 @@
             
             // Get currency symbol from config
             const currencySymbols = {
-                'ILS': '₪',
+                'ILS': 'NIS',
                 'USD': '$',
-                'EUR': '€',
-                'GBP': '£'
+                'EUR': 'EUR',
+                'GBP': 'GBP'
             };
             
             // Try to get currency from the form or default to ILS
             const currencySelect = document.getElementById('currency');
             const currency = currencySelect ? currencySelect.value : 'ILS';
-            const symbol = currencySymbols[currency] || '₪';
+            const symbol = currencySymbols[currency] || 'NIS';
             
             maxPriceDisplay.textContent = `Up to ${symbol}${Math.round(currentFilters.maxPrice).toLocaleString()}`;
             
@@ -2832,9 +2832,9 @@
             const airlineLabel = flight.airline || 'Multiple Airlines';
 
             const legThemes = [
-                { bg: '#f8f9fa', color: '#28a745', icon: '🛫' },
-                { bg: '#fff3cd', color: '#856404', icon: '🛫' },
-                { bg: '#d1ecf1', color: '#0c5460', icon: '🛬' }
+                { bg: '#f8f9fa', color: '#28a745', icon: '' },
+                { bg: '#fff3cd', color: '#856404', icon: '' },
+                { bg: '#d1ecf1', color: '#0c5460', icon: '' }
             ];
 
             const itineraryParts = [];
@@ -2844,14 +2844,14 @@
             } else {
                 itineraryParts.push('???');
             }
-            const itineraryPath = itineraryParts.join(' → ');
+            const itineraryPath = itineraryParts.join(' > ');
 
             const legSections = legs.map((leg, idx) => {
                 const theme = legThemes[Math.min(idx, legThemes.length - 1)];
                 const legPrice = Number(leg?.price || 0);
                 return `
                     <div class="multi-leg-breakdown" style="background: ${theme.bg}; padding: 15px; border-radius: 8px; margin: 10px 0;">
-                        <h4 style="color: ${theme.color}; margin-bottom: 10px;">${theme.icon} Leg ${idx + 1}: ${leg?.from || 'N/A'} → ${leg?.to || 'N/A'}</h4>
+                        <h4 style="color: ${theme.color}; margin-bottom: 10px;">${theme.icon} Leg ${idx + 1}: ${leg?.from || 'N/A'} > ${leg?.to || 'N/A'}</h4>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; font-size: 0.9em;">
                             <div><strong>Date:</strong> ${leg?.date || 'N/A'}</div>
                             <div><strong>Airline:</strong> ${leg?.airline || 'N/A'}</div>
@@ -2885,7 +2885,7 @@
                                 ${itineraryPath}
                             </div>
                             <div style="font-size: 0.85em; color: #888;">
-                                ${departureDate} → ${returnDate}
+                                ${departureDate} > ${returnDate}
                             </div>
                         </div>
                         <div>
