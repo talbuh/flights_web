@@ -1974,11 +1974,18 @@
                 // Start real-time progress updates
                 startRealTimeProgress();
             } else {
-                // Show simple loading for regular search
-                searchBtn.textContent = 'Searching...';
-                loading.style.display = 'block';
-                progressContainer.style.display = 'none';
-                document.querySelector('.loading p').textContent = 'Searching for the best flights...';
+                // Show progress bar for regular search too (now that we have threading)
+                searchBtn.textContent = 'Searching Flights...';
+                loading.style.display = 'none';
+                progressContainer.style.display = 'block';
+
+                // Reset progress
+                resetProgress();
+                searchStartTime = Date.now();
+                document.getElementById('progressText').textContent = 'Searching for flights...';
+
+                // Start real-time progress updates
+                startRealTimeProgress();
             }
             
             try {
