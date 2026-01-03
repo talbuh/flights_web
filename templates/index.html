@@ -2049,6 +2049,11 @@
         }
 
         function startRealTimeProgress() {
+            // נקה polling ישן אם קיים
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+
             // Use polling to get progress updates
             progressInterval = setInterval(async () => {
                 try {
