@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Flight Search</title>
+    
+    <!-- Descope Web Component -->
+    <script src="https://unpkg.com/@descope/web-component@latest/dist/index.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            padding: 50px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 40px;
+        }
+
+        .features {
+            text-align: left;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .features h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .features li {
+            padding: 8px 0;
+            color: #555;
+        }
+
+        .features li:before {
+            content: "✓ ";
+            color: #4facfe;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>Flight Search</h1>
+        <p class="subtitle">Find the best flight deals with flexible dates</p>
+        
+        <!-- Descope login widget (includes Google button!) -->
+        <descope-wc
+            project-id="{{ descope_project_id }}"
+            flow-id="sign-up-or-in"
+            theme="light"
+        />
+        
+        <div class="features">
+            <h3>What you get:</h3>
+            <ul>
+                <li>10 free searches per month</li>
+                <li>Flexible date range search</li>
+                <li>Multi-city route optimization</li>
+                <li>Real-time price tracking</li>
+            </ul>
+        </div>
+        
+        <script>
+            const wcElement = document.getElementsByTagName('descope-wc')[0];
+            
+            const onSuccess = (e) => {
+                console.log('Login success!', e.detail.user);
+                console.log('User name:', e.detail.user.name);
+                console.log('User email:', e.detail.user.email);
+                
+                // Get session token from Descope
+                const sessionToken = e.detail.sessionJwt;
+                console.log('Session token received:', sessionToken ? 'YES' : 'NO');
+                
+                // Redirect to callback with token
+                if (sessionToken) {
+                    window.location.href = `/auth/callback?token=${sessionToken}`;
+                } else {
+                    alert('Login succeeded but no session token received. Please try again.');
+                }
+            };
+            
+            const onError = (err) => {
+                console.error('Login error:', err);
+                alert('Login failed. Please try again.');
+            };
+            
+            wcElement.addEventListener('success', onSuccess);
+            wcElement.addEventListener('error', onError);
+        </script>
+    </div>
+</body>
+</html>
+

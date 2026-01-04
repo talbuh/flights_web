@@ -1,0 +1,6 @@
+flask>=2.0.0
+fast-flights>=2.0
+requests>=2.25.0
+
+# Authentication for v2
+descope>=1.0.0

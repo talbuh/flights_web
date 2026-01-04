@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Flight Search</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+        }
+
+        .header a {
+            background: white;
+            color: #ff6b6b;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .users-section {
+            padding: 30px;
+        }
+
+        .users-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .search-bar {
+            margin-bottom: 20px;
+            padding: 12px;
+            width: 100%;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge.admin {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .badge.unlimited {
+            background: #ffd93d;
+            color: #333;
+        }
+
+        .badge.pro {
+            background: #4facfe;
+            color: white;
+        }
+
+        .badge.free {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .badge.blocked {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin: 2px;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #4facfe;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffd93d;
+            color: #333;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .charts-section {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .chart-card h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .metric-card .label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .metric-card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .metric-card .subtext {
+            font-size: 0.85em;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .metric-card:nth-child(1) {
+            border-left: 4px solid #ffd93d;
+        }
+
+        .metric-card:nth-child(2) {
+            border-left: 4px solid #28a745;
+        }
+
+        .metric-card:nth-child(3) {
+            border-left: 4px solid #4facfe;
+        }
+
+        .metric-card:nth-child(4) {
+            border-left: 4px solid #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Admin Dashboard</h1>
+            <a href="/">← Back to Search</a>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Total Users</h3>
+                <div class="value">{{ stats.total_users }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Searches</h3>
+                <div class="value">{{ stats.total_searches }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Searches Today</h3>
+                <div class="value">{{ stats.searches_today }}</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Users (30d)</h3>
+                <div class="value">{{ stats.active_users }}</div>
+            </div>
+        </div>
+
+        <div class="charts-section">
+            <h2>Analytics & Insights</h2>
+            
+            <!-- Advanced Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="label">Hit Quota Limit</div>
+                    <div class="value">{{ analytics.users_hit_limit }}</div>
+                    <div class="subtext">Users reached 10 searches</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Conversion Rate</div>
+                    <div class="value">{{ analytics.conversion_rate }}%</div>
+                    <div class="subtext">From free to paid</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Avg Searches/User</div>
+                    <div class="value">{{ analytics.avg_searches_per_user }}</div>
+                    <div class="subtext">Total: {{ stats.total_searches }}</div>
+                </div>
+                <div class="metric-card">
+                    <div class="label">Monthly Revenue</div>
+                    <div class="value">${{ analytics.monthly_revenue }}</div>
+                    <div class="subtext">{{ analytics.paid_users }} paid users</div>
+                </div>
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3>📈 New Users Over Time</h3>
+                    <div class="chart-container">
+                        <canvas id="usersChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>🎯 User Tiers Distribution</h3>
+                    <div class="chart-container">
+                        <canvas id="tiersChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>🔥 Search Activity (Last 7 Days)</h3>
+                    <div class="chart-container">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>💰 Conversion Funnel</h3>
+                    <div class="chart-container">
+                        <canvas id="funnelChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="users-section">
+            <h2>User Management</h2>
+            <input type="text" class="search-bar" id="searchUsers" placeholder="Search by email...">
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Tier</th>
+                        <th>Quota</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTable">
+                    {% for user in users %}
+                    <tr data-email="{{ user.email }}">
+                        <td>
+                            {{ user.email }}
+                            {% if user.is_admin %}
+                            <span class="badge admin">ADMIN</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {{ user.tier }}">{{ user.tier.upper() }}</span>
+                        </td>
+                        <td>
+                            {{ user.searches_used }} / {{ user.monthly_limit }}
+                            {% if user.monthly_limit >= 999999 %}
+                            ∞
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_blocked %}
+                            <span class="badge blocked">BLOCKED</span>
+                            {% else %}
+                            <span class="badge success">ACTIVE</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.created_at }}</td>
+                        <td>
+                            <button class="btn btn-primary" onclick="editQuota('{{ user.id }}', '{{ user.email }}', {{ user.monthly_limit }}, '{{ user.tier }}')">
+                                Edit Quota
+                            </button>
+                            {% if not user.is_blocked %}
+                            <button class="btn btn-danger" onclick="blockUser('{{ user.id }}', '{{ user.email }}')">
+                                Block
+                            </button>
+                            {% else %}
+                            <button class="btn btn-success" onclick="unblockUser('{{ user.id }}', '{{ user.email }}')">
+                                Unblock
+                            </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Edit Quota Modal -->
+    <div id="editQuotaModal" class="modal">
+        <div class="modal-content">
+            <h3>Edit User Quota</h3>
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="text" id="modalEmail" readonly>
+            </div>
+            <div class="form-group">
+                <label>Tier:</label>
+                <select id="modalTier" onchange="updateQuotaField()">
+                    <option value="free">Free (10 searches)</option>
+                    <option value="pro">Pro (50 searches)</option>
+                    <option value="premium">Premium (200 searches)</option>
+                    <option value="unlimited">Unlimited (∞ searches)</option>
+                </select>
+            </div>
+            <div class="form-group" id="customQuotaGroup">
+                <label>Monthly Limit:</label>
+                <input type="number" id="modalQuota" min="0">
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="saveQuota()">Save</button>
+                <button class="btn btn-danger" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUserId = null;
+
+        // Search users
+        document.getElementById('searchUsers').addEventListener('input', function(e) {
+            const search = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#usersTable tr');
+            rows.forEach(row => {
+                const email = row.getAttribute('data-email').toLowerCase();
+                row.style.display = email.includes(search) ? '' : 'none';
+            });
+        });
+
+        function editQuota(userId, email, currentLimit, currentTier) {
+            currentUserId = userId;
+            document.getElementById('modalEmail').value = email;
+            document.getElementById('modalTier').value = currentTier;
+            document.getElementById('modalQuota').value = currentLimit >= 999999 ? 999999 : currentLimit;
+            updateQuotaField();
+            document.getElementById('editQuotaModal').style.display = 'flex';
+        }
+
+        function updateQuotaField() {
+            const tier = document.getElementById('modalTier').value;
+            const quotaInput = document.getElementById('modalQuota');
+            const quotaGroup = document.getElementById('customQuotaGroup');
+            
+            const tierLimits = {
+                'free': 10,
+                'pro': 50,
+                'premium': 200,
+                'unlimited': 999999
+            };
+            
+            quotaInput.value = tierLimits[tier];
+            
+            if (tier === 'unlimited') {
+                quotaGroup.style.display = 'none';
+            } else {
+                quotaGroup.style.display = 'block';
+            }
+        }
+
+        async function saveQuota() {
+            const tier = document.getElementById('modalTier').value;
+            const quota = document.getElementById('modalQuota').value;
+            
+            const response = await fetch('/admin/update_quota', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    user_id: currentUserId,
+                    tier: tier,
+                    monthly_limit: parseInt(quota)
+                })
+            });
+            
+            if (response.ok) {
+                alert('Quota updated successfully!');
+                location.reload();
+            } else {
+                alert('Failed to update quota');
+            }
+        }
+
+        async function blockUser(userId, email) {
+            if (!confirm(`Block user ${email}?`)) return;
+            
+            const response = await fetch('/admin/block_user', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: userId, blocked: true})
+            });
+            
+            if (response.ok) {
+                alert('User blocked');
+                location.reload();
+            }
+        }
+
+        async function unblockUser(userId, email) {
+            if (!confirm(`Unblock user ${email}?`)) return;
+            
+            const response = await fetch('/admin/block_user', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({user_id: userId, blocked: false})
+            });
+            
+            if (response.ok) {
+                alert('User unblocked');
+                location.reload();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('editQuotaModal').style.display = 'none';
+        }
+
+        // Initialize Charts
+        function initCharts() {
+            // Users Over Time Chart
+            const usersCtx = document.getElementById('usersChart').getContext('2d');
+            new Chart(usersCtx, {
+                type: 'line',
+                data: {
+                    labels: {{ chart_data.users_timeline_labels | tojson }},
+                    datasets: [{
+                        label: 'New Users',
+                        data: {{ chart_data.users_timeline_data | tojson }},
+                        borderColor: '#4facfe',
+                        backgroundColor: 'rgba(79, 172, 254, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 } }
+                    }
+                }
+            });
+
+            // Tiers Distribution Chart
+            const tiersCtx = document.getElementById('tiersChart').getContext('2d');
+            new Chart(tiersCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: {{ chart_data.tiers_labels | tojson }},
+                    datasets: [{
+                        data: {{ chart_data.tiers_data | tojson }},
+                        backgroundColor: [
+                            '#e0e0e0',  // free
+                            '#4facfe',  // pro
+                            '#ffd93d',  // premium
+                            '#ff6b6b'   // unlimited
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+
+            // Search Activity Chart
+            const activityCtx = document.getElementById('activityChart').getContext('2d');
+            new Chart(activityCtx, {
+                type: 'bar',
+                data: {
+                    labels: {{ chart_data.activity_labels | tojson }},
+                    datasets: [{
+                        label: 'Searches',
+                        data: {{ chart_data.activity_data | tojson }},
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 } }
+                    }
+                }
+            });
+
+            // Conversion Funnel Chart
+            const funnelCtx = document.getElementById('funnelChart').getContext('2d');
+            new Chart(funnelCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['All Users', 'Used Service', 'Hit Limit', 'Converted'],
+                    datasets: [{
+                        label: 'Users',
+                        data: {{ chart_data.funnel_data | tojson }},
+                        backgroundColor: [
+                            '#4facfe',
+                            '#667eea',
+                            '#ffd93d',
+                            '#28a745'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { precision: 0 } }
+                    }
+                }
+            });
+        }
+
+        // Initialize charts when page loads
+        document.addEventListener('DOMContentLoaded', initCharts);
+    </script>
+</body>
+</html>
+
