@@ -64,15 +64,6 @@ venv.bak/
 .Trashes
 Thumbs.db
 
-# Database files - DO NOT COMMIT
+# Database files
+jobs.db
 *.db
-
-# Environment files - DO NOT COMMIT
-.env
-v1_original/.env
-v2_development/.env
-
-# Python cache
-__pycache__/
-v1_original/__pycache__/
-v2_development/__pycache__/

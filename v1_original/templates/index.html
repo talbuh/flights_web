@@ -1,24 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Flight Search</title>
-    
-    <!-- Descope Web Component -->
-    <script src="https://unpkg.com/@descope/web-component@latest/dist/index.js"></script>
-    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        }
-
-        html, body {
-            overflow-x: hidden;
-            width: 100%;
-            max-width: 100vw;
         }
 
         body {
@@ -30,23 +18,11 @@
 
         .container {
             max-width: 1200px;
-            width: 100%;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
-        }
-
-        /* Prevent overflow for all major elements */
-        .search-form, .results, .calendar-container, .filter-panel {
-            max-width: 100%;
-            overflow-x: hidden;
-        }
-
-        table, img, video, iframe {
-            max-width: 100%;
-            height: auto;
         }
 
         .header {
@@ -75,31 +51,6 @@
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
-        }
-        
-        /* Desktop: Better organized layout */
-        @media (min-width: 1024px) {
-            .form-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            
-            .form-grid .form-group.half-width {
-                grid-column: span 2;
-            }
-            
-            #specificDatesFields,
-            #dateRangeFields {
-                grid-column: 1 / -1;
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 20px;
-                margin: 0;
-            }
-            
-            #specificDatesFields .form-group,
-            #dateRangeFields .form-group {
-                margin: 0;
-            }
         }
 
         .form-group {
@@ -360,120 +311,6 @@
             margin: 0 auto 20px;
         }
 
-        /* Animated plane loading */
-        .plane-loader {
-            position: relative;
-            width: 120px;
-            height: 120px;
-            margin: 0 auto 20px;
-            transition: transform 0.3s ease, opacity 0.3s ease;
-        }
-
-        .plane-loader.completing {
-            animation: loader-zoom-out 1.8s ease-out forwards;
-        }
-
-        @keyframes loader-zoom-out {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            100% {
-                transform: scale(0.5);
-                opacity: 0;
-            }
-        }
-
-        .plane-icon {
-            font-size: 40px;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            animation: plane-fly 3s ease-in-out infinite;
-        }
-
-        .orbit-circle {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100px;
-            height: 100px;
-            margin: -50px 0 0 -50px;
-            border: 3px dashed #4facfe;
-            border-radius: 50%;
-            opacity: 0.3;
-            animation: orbit-pulse 2s ease-in-out infinite;
-        }
-
-        .orbit-circle:nth-child(2) {
-            width: 70px;
-            height: 70px;
-            margin: -35px 0 0 -35px;
-            animation-delay: 0.5s;
-        }
-
-        @keyframes plane-fly {
-            0%, 100% {
-                transform: translate(-50%, -50%) rotate(0deg) translateX(30px) rotate(45deg);
-            }
-            25% {
-                transform: translate(-50%, -50%) rotate(90deg) translateX(30px) rotate(45deg);
-            }
-            50% {
-                transform: translate(-50%, -50%) rotate(180deg) translateX(30px) rotate(45deg);
-            }
-            75% {
-                transform: translate(-50%, -50%) rotate(270deg) translateX(30px) rotate(45deg);
-            }
-        }
-
-        /* Plane takeoff animation */
-        @keyframes plane-takeoff {
-            0% {
-                transform: translate(-50%, -50%) rotate(45deg) scale(1);
-                opacity: 1;
-            }
-            20% {
-                transform: translate(-50%, -50%) rotate(45deg) scale(1.2);
-                opacity: 1;
-            }
-            60% {
-                transform: translate(-50%, -250%) rotate(30deg) scale(1.8);
-                opacity: 0.8;
-            }
-            100% {
-                transform: translate(-50%, -500%) rotate(0deg) scale(2.5);
-                opacity: 0;
-            }
-        }
-
-        .plane-icon.takeoff {
-            animation: plane-takeoff 1.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
-        }
-
-        .orbit-circle.fade-out {
-            animation: fade-out-orbit 1s ease-out forwards !important;
-        }
-
-        @keyframes fade-out-orbit {
-            to {
-                opacity: 0;
-                transform: scale(1.5);
-            }
-        }
-
-        @keyframes orbit-pulse {
-            0%, 100% {
-                transform: scale(1);
-                opacity: 0.3;
-            }
-            50% {
-                transform: scale(1.1);
-                opacity: 0.5;
-            }
-        }
-
         .progress-container {
             display: none;
             background: white;
@@ -560,32 +397,6 @@
             font-weight: 600;
             color: #333;
             margin-bottom: 10px;
-        }
-
-        .progress-error {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 15px;
-            text-align: center;
-            color: #856404;
-        }
-
-        .retry-btn {
-            background: #ffc107;
-            color: #000;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            margin-top: 10px;
-            transition: background 0.3s;
-        }
-
-        .retry-btn:hover {
-            background: #e0a800;
         }
 
         .progress-current-search {
@@ -1063,53 +874,16 @@
         }
 
         @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            .container {
-                max-width: 100%;
-                margin: 0;
-                border-radius: 10px;
-            }
-
-            .header h1 {
-                font-size: 1.8em;
-            }
-
-            .header p {
-                font-size: 1em;
-            }
-
-            .search-form {
-                padding: 20px 15px;
-            }
-
             .form-grid {
-                grid-template-columns: 1fr !important;
-                gap: 15px;
-            }
-
-            #specificDatesFields,
-            #dateRangeFields {
-                grid-template-columns: 1fr !important;
+                grid-template-columns: 1fr;
             }
             
             .route-buttons {
                 flex-direction: column;
             }
-
-            .route-btn {
-                width: 100%;
-                text-align: center;
-            }
             
             .flight-details {
                 grid-template-columns: 1fr;
-            }
-
-            .flight-card {
-                padding: 15px;
             }
 
             .calendar-grid {
@@ -1123,89 +897,12 @@
 
             .calendar-legend {
                 gap: 10px;
-                flex-direction: column;
-            }
-
-            .filter-content {
-                grid-template-columns: 1fr !important;
-            }
-
-            .progress-stats {
-                grid-template-columns: repeat(2, 1fr) !important;
-            }
-
-            #user-info-bar {
-                flex-direction: column !important;
-                gap: 10px;
-                text-align: center;
-                padding: 10px 15px !important;
-            }
-
-            .results {
-                padding: 20px 15px;
-            }
-
-            .multi-leg-meta {
-                grid-template-columns: 1fr !important;
-            }
-
-            .multi-leg-card {
-                padding: 15px;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Login Overlay (shown if user not logged in) -->
-    <div id="login-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-         background: rgba(0,0,0,0.85); z-index: 10000; align-items: center; justify-content: center;">
-        <div style="background: white; padding: 50px 40px; border-radius: 20px; max-width: 450px; width: 90%; text-align: center;">
-            <h2 style="color: #333; margin-bottom: 10px;">Login to Search Flights</h2>
-            <p style="color: #666; margin-bottom: 30px;">Get 10 free searches per month!</p>
-            
-            <!-- Descope login widget -->
-            <descope-wc
-                project-id="P37mczF1NShERSaYoouYUx4SNocu"
-                flow-id="sign-up-or-in"
-                theme="light"
-            />
-            
-            <script>
-                const loginWc = document.querySelector('#login-overlay descope-wc');
-                if (loginWc) {
-                    loginWc.addEventListener('success', (e) => {
-                        console.log('Login success!', e.detail.user);
-                        // Get session token from Descope
-                        const sessionToken = e.detail.sessionJwt;
-                        console.log('Session token:', sessionToken);
-                        
-                        // Send to backend
-                        window.location.href = `/auth/callback?token=${sessionToken}`;
-                    });
-                    loginWc.addEventListener('error', (err) => {
-                        console.error('Login error:', err);
-                        alert('Login failed. Please try again.');
-                    });
-                }
-            </script>
-        </div>
-    </div>
-
     <div class="container">
-        <!-- User Info Bar (shown if logged in) -->
-        <div id="user-info-bar" style="display: none; background: #f8f9fa; padding: 15px 30px; border-bottom: 1px solid #e1e5e9; 
-             display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <span style="color: #333; font-weight: 600;">Logged in as: </span>
-                <span id="user-email" style="color: #666;"></span>
-            </div>
-            <div style="display: flex; gap: 20px; align-items: center;">
-                <span id="quota-display" style="color: #4facfe; font-weight: 600;"></span>
-                <a id="admin-link" href="/admin" style="display: none; color: #ff6b6b; text-decoration: none; font-weight: 600;">🔧 Dashboard</a>
-                <a href="/logout" style="color: #dc3545; text-decoration: none; font-weight: 600;">Logout</a>
-            </div>
-        </div>
-        
         <div class="header">
             <h1> Flight Search</h1>
             <p>Find the best flights with real-time pricing</p>
@@ -1232,128 +929,17 @@
 
             <div class="form-grid">
                 <div class="form-group">
-                    <label for="from_airport">From Airport (City or Code)</label>
-                    <input type="text" id="from_airport" name="from_airport" value="TLV" 
-                           placeholder="Search city or code..." list="airportList" autocomplete="off" required>
+                    <label for="from_airport">From Airport</label>
+                    <input type="text" id="from_airport" name="from_airport" value="TLV" placeholder="TLV" maxlength="3" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="to_airport">To Airport (City or Code)</label>
-                    <input type="text" id="to_airport" name="to_airport" value="BKK" 
-                           placeholder="Search city or code..." list="airportList" autocomplete="off" required>
-                </div>
-            </div>
-
-            <!-- Airport Datalist -->
-            <datalist id="airportList">
-                <!-- Israel -->
-                <option value="TLV">Tel Aviv - Ben Gurion (TLV)</option>
-                
-                <!-- Europe -->
-                <option value="LHR">London - Heathrow (LHR)</option>
-                <option value="LGW">London - Gatwick (LGW)</option>
-                <option value="CDG">Paris - Charles de Gaulle (CDG)</option>
-                <option value="ORY">Paris - Orly (ORY)</option>
-                <option value="AMS">Amsterdam (AMS)</option>
-                <option value="FCO">Rome - Fiumicino (FCO)</option>
-                <option value="BCN">Barcelona (BCN)</option>
-                <option value="MAD">Madrid (MAD)</option>
-                <option value="FRA">Frankfurt (FRA)</option>
-                <option value="MUC">Munich (MUC)</option>
-                <option value="BER">Berlin (BER)</option>
-                <option value="VIE">Vienna (VIE)</option>
-                <option value="ZRH">Zurich (ZRH)</option>
-                <option value="CPH">Copenhagen (CPH)</option>
-                <option value="OSL">Oslo (OSL)</option>
-                <option value="ARN">Stockholm (ARN)</option>
-                <option value="HEL">Helsinki (HEL)</option>
-                <option value="LIS">Lisbon (LIS)</option>
-                <option value="ATH">Athens (ATH)</option>
-                <option value="IST">Istanbul (IST)</option>
-                <option value="SAW">Istanbul - Sabiha (SAW)</option>
-                <option value="PRG">Prague (PRG)</option>
-                <option value="BUD">Budapest (BUD)</option>
-                <option value="WAW">Warsaw (WAW)</option>
-                
-                <!-- North America -->
-                <option value="JFK">New York - JFK (JFK)</option>
-                <option value="EWR">New York - Newark (EWR)</option>
-                <option value="LGA">New York - LaGuardia (LGA)</option>
-                <option value="LAX">Los Angeles (LAX)</option>
-                <option value="SFO">San Francisco (SFO)</option>
-                <option value="MIA">Miami (MIA)</option>
-                <option value="ORD">Chicago (ORD)</option>
-                <option value="BOS">Boston (BOS)</option>
-                <option value="IAD">Washington DC (IAD)</option>
-                <option value="ATL">Atlanta (ATL)</option>
-                <option value="DFW">Dallas (DFW)</option>
-                <option value="SEA">Seattle (SEA)</option>
-                <option value="LAS">Las Vegas (LAS)</option>
-                <option value="YYZ">Toronto (YYZ)</option>
-                <option value="YVR">Vancouver (YVR)</option>
-                <option value="YUL">Montreal (YUL)</option>
-                
-                <!-- Asia -->
-                <option value="BKK">Bangkok - Suvarnabhumi (BKK)</option>
-                <option value="DMK">Bangkok - Don Mueang (DMK)</option>
-                <option value="HKT">Phuket (HKT)</option>
-                <option value="CNX">Chiang Mai (CNX)</option>
-                <option value="SIN">Singapore (SIN)</option>
-                <option value="KUL">Kuala Lumpur (KUL)</option>
-                <option value="HKG">Hong Kong (HKG)</option>
-                <option value="ICN">Seoul - Incheon (ICN)</option>
-                <option value="NRT">Tokyo - Narita (NRT)</option>
-                <option value="HND">Tokyo - Haneda (HND)</option>
-                <option value="DEL">Delhi (DEL)</option>
-                <option value="BOM">Mumbai (BOM)</option>
-                <option value="DXB">Dubai (DXB)</option>
-                <option value="AUH">Abu Dhabi (AUH)</option>
-                <option value="DOH">Doha (DOH)</option>
-                <option value="BAH">Bahrain (BAH)</option>
-                <option value="AMM">Amman (AMM)</option>
-                <option value="CAI">Cairo (CAI)</option>
-                <option value="HAN">Hanoi (HAN)</option>
-                <option value="SGN">Ho Chi Minh City (SGN)</option>
-                <option value="CGK">Jakarta (CGK)</option>
-                <option value="DPS">Bali - Denpasar (DPS)</option>
-                <option value="MNL">Manila (MNL)</option>
-                <option value="PEK">Beijing (PEK)</option>
-                <option value="PVG">Shanghai (PVG)</option>
-                
-                <!-- Oceania -->
-                <option value="SYD">Sydney (SYD)</option>
-                <option value="MEL">Melbourne (MEL)</option>
-                <option value="BNE">Brisbane (BNE)</option>
-                <option value="PER">Perth (PER)</option>
-                <option value="AKL">Auckland (AKL)</option>
-                
-                <!-- South America -->
-                <option value="GRU">São Paulo (GRU)</option>
-                <option value="GIG">Rio de Janeiro (GIG)</option>
-                <option value="EZE">Buenos Aires (EZE)</option>
-                <option value="BOG">Bogota (BOG)</option>
-                <option value="LIM">Lima (LIM)</option>
-                
-                <!-- Africa -->
-                <option value="JNB">Johannesburg (JNB)</option>
-                <option value="CPT">Cape Town (CPT)</option>
-                <option value="NBO">Nairobi (NBO)</option>
-                <option value="ADD">Addis Ababa (ADD)</option>
-            </datalist>
-
-            <div class="form-grid">
-
-                <div class="form-group half-width">
-                    <label for="trip_type">Trip Type</label>
-                    <select id="trip_type" name="trip_type">
-                        <option value="round-trip">Round Trip</option>
-                        <option value="one-way">One Way</option>
-                        <option value="multi-city">Multi-City (3 destinations)</option>
-                    </select>
+                    <label for="to_airport">To Airport</label>
+                    <input type="text" id="to_airport" name="to_airport" value="BKK" placeholder="BKK" maxlength="3" required>
                 </div>
 
                 <!-- Specific Dates Fields -->
-                <div id="specificDatesFields">
+                <div class="form-group" id="specificDatesFields">
                     <div class="form-group">
                         <label for="departure_date">Departure Date</label>
                         <input type="date" id="departure_date" name="departure_date">
@@ -1366,7 +952,7 @@
                 </div>
 
                 <!-- Date Range Fields -->
-                <div id="dateRangeFields" style="display: none;">
+                <div class="form-group" id="dateRangeFields" style="display: none;">
                     <div class="form-group">
                         <label for="start_period">Travel Period Start</label>
                         <input type="date" id="start_period" name="start_period">
@@ -1389,48 +975,16 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="adults">Adults</label>
-                    <input type="number" id="adults" name="adults" value="1" min="1" max="9">
-                </div>
-
-                <div class="form-group">
-                    <label for="children">Children</label>
-                    <input type="number" id="children" name="children" value="0" min="0" max="8">
-                </div>
-
-                <div class="form-group">
-                    <label for="seat_class">Seat Class</label>
-                    <select id="seat_class" name="seat_class">
-                        <option value="economy">Economy</option>
-                        <option value="premium-economy">Premium Economy</option>
-                        <option value="business">Business</option>
-                        <option value="first">First</option>
+                    <label for="trip_type">Trip Type</label>
+                    <select id="trip_type" name="trip_type">
+                        <option value="round-trip">Round Trip</option>
+                        <option value="one-way">One Way</option>
+                        <option value="multi-city">Multi-City (3 destinations)</option>
                     </select>
                 </div>
 
-                <div class="form-group">
-                    <label for="max_stops">Max Stops</label>
-                    <select id="max_stops" name="max_stops">
-                        <option value="-1">Any</option>
-                        <option value="0">Direct Only</option>
-                        <option value="1">Max 1 Stop</option>
-                        <option value="2">Max 2 Stops</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="currency">Currency</label>
-                    <select id="currency" name="currency">
-                        <option value="ILS">NIS Israeli Shekel (ILS)</option>
-                        <option value="USD">$ US Dollar (USD)</option>
-                        <option value="EUR">EUR Euro (EUR)</option>
-                        <option value="GBP">GBP British Pound (GBP)</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Multi-City Fields (hidden by default) -->
-            <div id="multi-city-fields" class="multi-city-section">
+                <!-- Multi-City Fields (hidden by default) -->
+                <div id="multi-city-fields" class="multi-city-section">
                     <div class="route-section">
                         <h3> Multi-City Itinerary</h3>
                         <p class="multi-city-note">
@@ -1458,13 +1012,11 @@
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label for="leg1_from">From</label>
-                                        <input type="text" id="leg1_from" name="leg1_from" value="TLV" 
-                                               placeholder="Search city or code..." list="airportList" autocomplete="off">
+                                        <input type="text" id="leg1_from" name="leg1_from" value="TLV" placeholder="TLV" maxlength="3">
                                     </div>
                                     <div class="form-group">
                                         <label for="leg1_to">To</label>
-                                        <input type="text" id="leg1_to" name="leg1_to" value="HKT" 
-                                               placeholder="Search city or code..." list="airportList" autocomplete="off">
+                                        <input type="text" id="leg1_to" name="leg1_to" value="HKT" placeholder="HKT (Phuket)" maxlength="3">
                                     </div>
                                 </div>
                             </div>
@@ -1484,13 +1036,11 @@
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label for="leg2_from">From</label>
-                                        <input type="text" id="leg2_from" name="leg2_from" value="HKT" 
-                                               placeholder="Search city or code..." list="airportList" autocomplete="off">
+                                        <input type="text" id="leg2_from" name="leg2_from" value="HKT" placeholder="HKT" maxlength="3">
                                     </div>
                                     <div class="form-group">
                                         <label for="leg2_to">To</label>
-                                        <input type="text" id="leg2_to" name="leg2_to" value="BKK" 
-                                               placeholder="Search city or code..." list="airportList" autocomplete="off">
+                                        <input type="text" id="leg2_to" name="leg2_to" value="BKK" placeholder="BKK (Bangkok)" maxlength="3">
                                     </div>
                                 </div>
 
@@ -1528,13 +1078,11 @@
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label for="leg3_from">From</label>
-                                        <input type="text" id="leg3_from" name="leg3_from" value="BKK" 
-                                               placeholder="Search city or code..." list="airportList" autocomplete="off">
+                                        <input type="text" id="leg3_from" name="leg3_from" value="BKK" placeholder="BKK" maxlength="3">
                                     </div>
                                     <div class="form-group">
                                         <label for="leg3_to">To</label>
-                                        <input type="text" id="leg3_to" name="leg3_to" value="TLV" 
-                                               placeholder="Search city or code..." list="airportList" autocomplete="off">
+                                        <input type="text" id="leg3_to" name="leg3_to" value="TLV" placeholder="TLV (Return home)" maxlength="3">
                                     </div>
                                 </div>
                             </div>
@@ -1548,29 +1096,60 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label for="seat_class">Seat Class</label>
+                    <select id="seat_class" name="seat_class">
+                        <option value="economy">Economy</option>
+                        <option value="premium-economy">Premium Economy</option>
+                        <option value="business">Business</option>
+                        <option value="first">First</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="adults">Adults</label>
+                    <input type="number" id="adults" name="adults" value="1" min="1" max="9">
+                </div>
+
+                <div class="form-group">
+                    <label for="children">Children</label>
+                    <input type="number" id="children" name="children" value="0" min="0" max="8">
+                </div>
+
+                <div class="form-group">
+                    <label for="max_stops">Max Stops</label>
+                    <select id="max_stops" name="max_stops">
+                        <option value="-1">Any</option>
+                        <option value="0">Direct Only</option>
+                        <option value="1">Max 1 Stop</option>
+                        <option value="2">Max 2 Stops</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="currency">Currency</label>
+                    <select id="currency" name="currency">
+                        <option value="ILS">NIS Israeli Shekel (ILS)</option>
+                        <option value="USD">$ US Dollar (USD)</option>
+                        <option value="EUR">EUR Euro (EUR)</option>
+                        <option value="GBP">GBP British Pound (GBP)</option>
+                    </select>
+                </div>
+            </div>
+
             <button type="submit" class="search-btn" id="searchBtn">
                  Search Flights
             </button>
         </form>
 
         <div class="loading" id="loading">
-            <div class="plane-loader">
-                <div class="orbit-circle"></div>
-                <div class="orbit-circle"></div>
-                <div class="plane-icon">✈️</div>
-            </div>
+            <div class="spinner"></div>
             <p>Searching for the best flights...</p>
-            <p style="font-size: 0.9em; color: #666; margin-top: 10px;">This may take a few moments for complex searches</p>
         </div>
 
         <div class="progress-container" id="progressContainer">
-            <div class="plane-loader" id="progressPlaneLoader" style="display: block;">
-                <div class="orbit-circle"></div>
-                <div class="orbit-circle"></div>
-                <div class="plane-icon">✈️</div>
-            </div>
             <div class="progress-header">
-                <h3>✈️ Searching Flight Combinations</h3>
+                <h3> Searching Flight Combinations</h3>
                 <p>Analyzing multiple date combinations to find the best deals...</p>
             </div>
             
@@ -1964,44 +1543,6 @@
             generateCalendar(currentCalendarDate.getFullYear(), currentCalendarDate.getMonth());
         });
 
-        // Airport input handler - extract code from selection
-        function extractAirportCode(value) {
-            // Extract 3-letter code from formats like "Bangkok - Suvarnabhumi (BKK)" or just "BKK"
-            const match = value.match(/\(([A-Z]{3})\)$/);
-            if (match) {
-                return match[1];
-            }
-            // If already just a code, return it uppercase
-            return value.toUpperCase().trim().slice(0, 3);
-        }
-
-        // Apply to all airport input fields
-        const airportInputs = [
-            'from_airport', 'to_airport',
-            'leg1_from', 'leg1_to',
-            'leg2_from', 'leg2_to',
-            'leg3_from', 'leg3_to'
-        ];
-
-        airportInputs.forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                // Extract code when user finishes typing or selects from datalist
-                input.addEventListener('blur', function() {
-                    if (this.value) {
-                        this.value = extractAirportCode(this.value);
-                    }
-                });
-
-                // Also extract on change (when selecting from datalist)
-                input.addEventListener('change', function() {
-                    if (this.value) {
-                        this.value = extractAirportCode(this.value);
-                    }
-                });
-            }
-        });
-
         // Set default dates
         const today = new Date();
         const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
@@ -2149,7 +1690,7 @@
             if (mode === 'specific') {
                 specificDatesBtn.classList.add('active');
                 dateRangeBtn.classList.remove('active');
-                specificDatesFields.style.display = '';
+                specificDatesFields.style.display = 'block';
                 dateRangeFields.style.display = 'none';
                 document.getElementById('departure_date').required = true;
                 document.getElementById('return_date').required = (currentTripType === 'round-trip');
@@ -2157,7 +1698,7 @@
                 dateRangeBtn.classList.add('active');
                 specificDatesBtn.classList.remove('active');
                 specificDatesFields.style.display = 'none';
-                dateRangeFields.style.display = '';
+                dateRangeFields.style.display = 'block';
                 document.getElementById('departure_date').required = false;
                 document.getElementById('return_date').required = false;
             }
@@ -2404,57 +1945,6 @@
         document.getElementById('searchForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // Validate airport codes before submitting
-            const fromAirport = document.getElementById('from_airport');
-            const toAirport = document.getElementById('to_airport');
-            
-            // Extract codes if needed
-            if (fromAirport.value) {
-                fromAirport.value = extractAirportCode(fromAirport.value);
-            }
-            if (toAirport.value) {
-                toAirport.value = extractAirportCode(toAirport.value);
-            }
-            
-            // Validate airport code format
-            const airportCodeRegex = /^[A-Z]{3}$/;
-            if (!airportCodeRegex.test(fromAirport.value)) {
-                alert('Invalid departure airport code. Please enter a valid 3-letter code (e.g., TLV)');
-                fromAirport.focus();
-                return;
-            }
-            if (!airportCodeRegex.test(toAirport.value)) {
-                alert('Invalid arrival airport code. Please enter a valid 3-letter code (e.g., BKK)');
-                toAirport.focus();
-                return;
-            }
-            
-            // Validate multi-city codes if applicable
-            if (currentTripType === 'multi-city') {
-                const multiCityInputs = [
-                    { id: 'leg1_from', name: 'Leg 1 From' },
-                    { id: 'leg1_to', name: 'Leg 1 To' },
-                    { id: 'leg2_from', name: 'Leg 2 From' },
-                    { id: 'leg2_to', name: 'Leg 2 To' },
-                    { id: 'leg3_from', name: 'Leg 3 From' },
-                    { id: 'leg3_to', name: 'Leg 3 To' }
-                ];
-                
-                for (const input of multiCityInputs) {
-                    const element = document.getElementById(input.id);
-                    if (element && element.offsetParent !== null) { // Check if visible
-                        if (element.value) {
-                            element.value = extractAirportCode(element.value);
-                        }
-                        if (element.value && !airportCodeRegex.test(element.value)) {
-                            alert(`Invalid airport code for ${input.name}. Please enter a valid 3-letter code.`);
-                            element.focus();
-                            return;
-                        }
-                    }
-                }
-            }
-            
             const searchBtn = document.getElementById('searchBtn');
             const loading = document.getElementById('loading');
             const progressContainer = document.getElementById('progressContainer');
@@ -2511,27 +2001,10 @@
                     formData.append('multi_city_mode', currentSearchType);
                 }
                 
-                // No timeout for initial request - let the search run as long as needed
-                // The polling mechanism will show progress in real-time
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     body: formData
                 });
-                
-                // Check for auth error
-                if (response.status === 401 || response.status === 403) {
-                    const errorData = await response.json();
-                    alert(errorData.message || 'Please log in to search flights');
-                    document.getElementById('login-overlay').style.display = 'flex';
-                    return;
-                }
-                
-                // Check for quota exceeded
-                if (response.status === 429) {
-                    const errorData = await response.json();
-                    alert(errorData.message || 'You have exceeded your monthly search quota');
-                    return;
-                }
                 
                 const data = await response.json();
                 
@@ -2539,14 +2012,10 @@
                 if (data.job_id && data.status === 'search_started') {
                     // Save job_id for polling
                     window.currentJobId = data.job_id;
-                    console.log('✅ Search started with job_id:', data.job_id);
-                    console.log('📊 Polling is active and will update progress every second');
+                    console.log('Search started with job_id:', data.job_id);
                     // Progress will be tracked via polling (already set up)
                     return;
                 }
-                
-                // If we got here, it means we got immediate results (no job_id)
-                console.log('⚡ Got immediate response (no job_id):', data);
                 
                 // Hide loading UIs (for backward compatibility or immediate results)
                 loading.style.display = 'none';
@@ -2560,8 +2029,6 @@
                 
                 if (data.success) {
                     displayResults(data);
-                    // Refresh quota display after search completes
-                    refreshQuotaDisplay();
                 } else if (data.error) {
                     displayError(data.error);
                 }
@@ -2588,66 +2055,6 @@
             document.getElementById('progressText').textContent = 'Preparing search...';
             document.getElementById('progressBar').style.width = '0%';
             document.getElementById('currentSearch').style.display = 'none';
-            
-            // Reset plane animations
-            const planeIcons = document.querySelectorAll('.plane-icon');
-            const orbitCircles = document.querySelectorAll('.orbit-circle');
-            planeIcons.forEach(plane => plane.classList.remove('takeoff'));
-            orbitCircles.forEach(circle => circle.classList.remove('fade-out'));
-            
-            // Reset and show plane loader
-            const planeLoader = document.getElementById('progressPlaneLoader');
-            if (planeLoader) {
-                planeLoader.classList.remove('completing');
-                planeLoader.style.display = 'block';
-                planeLoader.style.transform = '';
-                planeLoader.style.opacity = '';
-            }
-        }
-
-        function triggerPlaneTakeoff() {
-            console.log('✈️ Triggering plane takeoff animation!');
-            
-            // Make sure plane loader is visible and full size first
-            const planeLoader = document.getElementById('progressPlaneLoader');
-            if (planeLoader) {
-                planeLoader.style.display = 'block';
-                planeLoader.style.transform = '';
-                planeLoader.style.opacity = '';
-            }
-            
-            // Small delay to ensure the element is rendered
-            setTimeout(() => {
-                // Find all plane icons and orbit circles
-                const planeIcons = document.querySelectorAll('.plane-icon');
-                const orbitCircles = document.querySelectorAll('.orbit-circle');
-                
-                console.log(`Found ${planeIcons.length} plane icons and ${orbitCircles.length} orbit circles`);
-                
-                // Add takeoff animation to plane loader container
-                if (planeLoader) {
-                    planeLoader.classList.add('completing');
-                }
-                
-                // Add takeoff animation classes
-                planeIcons.forEach(plane => {
-                    plane.classList.add('takeoff');
-                    console.log('Added takeoff class to plane');
-                });
-                
-                orbitCircles.forEach(circle => {
-                    circle.classList.add('fade-out');
-                });
-                
-                // Hide progress container after animation completes
-                setTimeout(() => {
-                    console.log('Hiding progress container after takeoff animation');
-                    const progressContainer = document.getElementById('progressContainer');
-                    const loading = document.getElementById('loading');
-                    if (progressContainer) progressContainer.style.display = 'none';
-                    if (loading) loading.style.display = 'none';
-                }, 1900);
-            }, 50); // Small delay to ensure rendering
         }
 
         function startRealTimeProgress() {
@@ -2656,9 +2063,6 @@
                 clearInterval(progressInterval);
             }
 
-            let consecutiveErrors = 0;
-            const maxConsecutiveErrors = 5;
-
             // Use polling to get progress updates
             progressInterval = setInterval(async () => {
                 try {
@@ -2666,48 +2070,18 @@
                     const url = window.currentJobId 
                         ? `/progress_status?job_id=${window.currentJobId}` 
                         : '/progress_status';
-                    
-                    console.log('[POLLING] Fetching progress from:', url);
-                    
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout for polling
-                    
-                    const response = await fetch(url, { signal: controller.signal });
-                    clearTimeout(timeoutId);
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                    
+                    const response = await fetch(url);
                     const data = await response.json();
-                    console.log('[POLLING] Received data:', data);
-                    
-                    // Reset error counter on success
-                    consecutiveErrors = 0;
                     
                     // Update total combinations (first time only)
                     if (data.total > 0 && document.getElementById('totalCombinations').textContent === '0') {
                         document.getElementById('totalCombinations').textContent = data.total;
-                        console.log(`📈 Total combinations to search: ${data.total}`);
-                        
-                        // Keep plane loader visible but make it smaller/subtle
-                        const planeLoader = document.getElementById('progressPlaneLoader');
-                        if (planeLoader) {
-                            // Don't hide it completely, just make it smaller
-                            planeLoader.style.transform = 'scale(0.6)';
-                            planeLoader.style.opacity = '0.5';
-                        }
                     }
                     
                     // Update progress bar
                     document.getElementById('progressBar').style.width = data.percentage + '%';
                     document.getElementById('currentProgress').textContent = data.current;
                     document.getElementById('flightsFound').textContent = data.flights_found;
-                    
-                    // Log progress update
-                    if (data.current > 0 && data.total > 0) {
-                        console.log(`🔄 Progress: ${data.current}/${data.total} (${data.percentage}%) - Flights found: ${data.flights_found}`);
-                    }
                     
                     // Update progress text
                     if (data.total > 0) {
@@ -2733,9 +2107,6 @@
                         clearInterval(progressInterval);
                         document.getElementById('progressText').textContent = 'Search completed! Processing results...';
 
-                        // Trigger plane takeoff animation
-                        triggerPlaneTakeoff();
-
                         // Fetch final results
                         const resultsUrl = window.currentJobId 
                             ? `/search_results?job_id=${window.currentJobId}` 
@@ -2745,8 +2116,6 @@
                             .then(resultData => {
                                 if (resultData.result) {
                                     displayResults(resultData.result);
-                                    // Refresh quota display after search completes
-                                    refreshQuotaDisplay();
                                 } else if (resultData.error) {
                                     displayError('Search error: ' + resultData.error);
                                 }
@@ -2776,22 +2145,7 @@
                     }
                     
                 } catch (error) {
-                    consecutiveErrors++;
-                    console.error(`Failed to fetch progress (${consecutiveErrors}/${maxConsecutiveErrors}):`, error);
-                    
-                    // If too many consecutive errors, stop polling and show error
-                    if (consecutiveErrors >= maxConsecutiveErrors) {
-                        clearInterval(progressInterval);
-                        document.getElementById('progressText').textContent = 
-                            '⚠️ Connection lost. The search may still be running. Please refresh the page.';
-                        
-                        // Re-enable search button
-                        const searchBtn = document.getElementById('searchBtn');
-                        if (searchBtn) {
-                            searchBtn.disabled = false;
-                            searchBtn.textContent = ' Search Flights';
-                        }
-                    }
+                    console.error('Failed to fetch progress:', error);
                 }
             }, 1000); // Poll every second
         }
@@ -2799,9 +2153,6 @@
         function displayResults(data) {
             const resultsContent = document.getElementById('resultsContent');
             const results = document.getElementById('results');
-            
-            // Don't hide progress immediately - let the takeoff animation complete
-            // The animation will hide it automatically after 1.9 seconds
             
             let html = '';
             let flightsForFilters = data.flights || [];
@@ -3820,99 +3171,16 @@
         function displayError(error) {
             const resultsContent = document.getElementById('resultsContent');
             const results = document.getElementById('results');
-            const progressContainer = document.getElementById('progressContainer');
-            
-            // Hide progress container
-            progressContainer.style.display = 'none';
             
             resultsContent.innerHTML = `
                 <div class="error">
-                    <strong>⚠️ Search Error:</strong> ${error}
-                </div>
-                <div class="progress-error">
-                    <p><strong>What to try:</strong></p>
-                    <ul style="text-align: left; display: inline-block; margin-top: 10px;">
-                        <li>Check your internet connection</li>
-                        <li>Verify airport codes are correct (3 letters)</li>
-                        <li>Try different dates</li>
-                        <li>Reduce the date range if searching multiple combinations</li>
-                    </ul>
-                    <button class="retry-btn" onclick="location.reload()">🔄 Refresh Page & Try Again</button>
+                    <strong>Search Error:</strong> ${error}
                 </div>
             `;
             
             results.style.display = 'block';
         }
 
-    </script>
-
-    <!-- Check if user is logged in -->
-    <script>
-        async function checkLoginStatus() {
-            try {
-                const response = await fetch('/api/user_info');
-                const data = await response.json();
-                
-                if (data.logged_in) {
-                    // User is logged in - show user bar
-                    document.getElementById('user-info-bar').style.display = 'flex';
-                    document.getElementById('user-email').textContent = data.email;
-                    
-                    // Show admin dashboard link if admin
-                    if (data.is_admin) {
-                        document.getElementById('admin-link').style.display = 'inline-block';
-                    }
-                    
-                    // Display quota
-                    const quotaDisplay = document.getElementById('quota-display');
-                    if (data.searches_remaining === 'Unlimited') {
-                        quotaDisplay.textContent = '⭐ Unlimited searches';
-                        quotaDisplay.style.color = '#ffd93d';
-                        quotaDisplay.style.fontWeight = 'bold';
-                    } else {
-                        quotaDisplay.textContent = 
-                            `${data.searches_remaining} searches remaining (${data.searches_used}/${data.monthly_limit} used)`;
-                        quotaDisplay.style.color = '#4facfe';
-                    }
-                    
-                    // Hide login overlay
-                    document.getElementById('login-overlay').style.display = 'none';
-                } else {
-                    // User NOT logged in - show login overlay
-                    document.getElementById('login-overlay').style.display = 'flex';
-                    document.getElementById('user-info-bar').style.display = 'none';
-                }
-            } catch (error) {
-                console.error('Failed to check login status:', error);
-                // If error, assume not logged in
-                document.getElementById('login-overlay').style.display = 'flex';
-            }
-        }
-        
-        // Check login status on page load
-        checkLoginStatus();
-        
-        // Function to refresh quota display
-        async function refreshQuotaDisplay() {
-            try {
-                const response = await fetch('/api/user_info');
-                const data = await response.json();
-                
-                if (data.logged_in) {
-                    const quotaDisplay = document.getElementById('quota-display');
-                    if (data.searches_remaining === 'Unlimited') {
-                        quotaDisplay.textContent = '⭐ Unlimited searches';
-                        quotaDisplay.style.color = '#ffd93d';
-                    } else {
-                        quotaDisplay.textContent = 
-                            `${data.searches_remaining} searches remaining (${data.searches_used}/${data.monthly_limit} used)`;
-                        quotaDisplay.style.color = '#4facfe';
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to refresh quota:', error);
-            }
-        }
     </script>
 </body>
 </html>

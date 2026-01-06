@@ -9,7 +9,7 @@ except:
     pass  # Fallback if reconfigure not available
 
 print("Starting app.py...")
-from flask import Flask, render_template, request, jsonify, Response, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, Response
 import json
 print("Flask imported successfully")
 import sys
@@ -22,16 +22,6 @@ import time
 import os
 import sqlite3
 import uuid
-from functools import wraps
-
-# Descope authentication
-try:
-    from descope import DescopeClient, AuthException
-    descope_client = DescopeClient(project_id="P37mczF1NShERSaYoouYUx4SNocu")
-    print("Descope client initialized")
-except ImportError:
-    print("Warning: Descope not installed. Run: pip install descope")
-    descope_client = None
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -40,8 +30,6 @@ def init_db():
     """Initialize the jobs database"""
     conn = sqlite3.connect('jobs.db', check_same_thread=False)
     c = conn.cursor()
-    
-    # Jobs table (existing)
     c.execute('''
         CREATE TABLE IF NOT EXISTS jobs (
             job_id TEXT PRIMARY KEY,
@@ -56,45 +44,6 @@ def init_db():
             updated_at TEXT
         )
     ''')
-    
-    # Users table (for auth)
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id TEXT PRIMARY KEY,
-            email TEXT UNIQUE NOT NULL,
-            name TEXT,
-            is_blocked INTEGER DEFAULT 0,
-            is_admin INTEGER DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # User quota table
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS user_quota (
-            user_id TEXT PRIMARY KEY,
-            tier TEXT DEFAULT 'free',
-            monthly_limit INTEGER DEFAULT 10,
-            searches_used INTEGER DEFAULT 0,
-            reset_date DATE,
-            stripe_customer_id TEXT,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )
-    ''')
-    
-    # Search history table
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS search_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT,
-            search_type TEXT,
-            search_params TEXT,
-            results_count INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )
-    ''')
-    
     conn.commit()
     conn.close()
 
@@ -172,52 +121,6 @@ print("Database initialized")
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
-app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-
-# Authentication decorator
-def require_auth(f):
-    """Decorator to require Descope authentication"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not descope_client:
-            # Descope not available, skip auth for development
-            kwargs['current_user_id'] = 'dev_user'
-            kwargs['current_user_email'] = 'dev@example.com'
-            return f(*args, **kwargs)
-        
-        # Try to get session token from Flask session or cookies
-        session_token = session.get('descope_token') or request.cookies.get('DS')
-        
-        if not session_token:
-            return jsonify({'error': 'Authentication required', 'redirect': '/login'}), 401
-        
-        try:
-            # Validate with Descope
-            jwt_response = descope_client.validate_session(session_token=session_token)
-            user_id = jwt_response.get('sub') or jwt_response.get('userId')
-            user_email = jwt_response.get('email')
-            
-            # Check if user is blocked and get admin status
-            conn = sqlite3.connect('jobs.db')
-            c = conn.cursor()
-            c.execute('SELECT is_blocked, is_admin FROM users WHERE id = ?', (user_id,))
-            row = c.fetchone()
-            conn.close()
-            
-            if row and row[0] == 1:
-                return jsonify({'error': 'Account blocked. Contact support.'}), 403
-            
-            # Pass user info to the route (including admin status)
-            kwargs['current_user_id'] = user_id
-            kwargs['current_user_email'] = user_email
-            kwargs['is_admin'] = row[1] if row else 0
-            return f(*args, **kwargs)
-            
-        except Exception as e:
-            print(f"Auth error: {e}")
-            return jsonify({'error': 'Invalid session', 'redirect': '/login'}), 401
-    
-    return decorated_function
 
 class FlightSearchEngine:
     def __init__(self):
@@ -260,7 +163,7 @@ class FlightSearchEngine:
         except subprocess.CalledProcessError:
             print("Failed to install dependencies")
     
-    def search_date_range(self, config, job_id=None):
+    def search_date_range(self, config):
         """Advanced search across date ranges"""
         from datetime import datetime, timedelta
         import itertools
@@ -325,8 +228,7 @@ class FlightSearchEngine:
                     total=total_combinations,
                     current_dates=f"{dep_date} -> {ret_date} ({days} days)",
                     status="searching",
-                    flights_found=len(all_results),
-                    job_id=job_id
+                    flights_found=len(all_results)
                 )
                 
                 try:
@@ -408,8 +310,7 @@ class FlightSearchEngine:
                             total=total_combinations,
                             current_dates=f"{dep_date} -> {ret_date} ({days} days)",
                             status="found_flights",
-                            flights_found=len(all_results),
-                            job_id=job_id
+                            flights_found=len(all_results)
                         )
                         
                 except Exception as e:
@@ -423,8 +324,7 @@ class FlightSearchEngine:
                         total=total_combinations,
                         current_dates=f"{dep_date} -> {ret_date} ({days} days)",
                         status="error",
-                        flights_found=len(all_results),
-                        job_id=job_id
+                        flights_found=len(all_results)
                     )
                     continue
                 
@@ -458,8 +358,7 @@ class FlightSearchEngine:
                 total=total_combinations,
                 current_dates="Search completed!",
                 status="completed",
-                flights_found=len(all_results),
-                job_id=job_id
+                flights_found=len(all_results)
             )
             
             return {
@@ -857,16 +756,16 @@ class FlightSearchEngine:
                 'search_type': 'regular'
             }
 
-    def search_multi_city(self, config, job_id=None):
+    def search_multi_city(self, config):
         """Dispatch multi-city search based on the requested mode."""
         mode = config.get('multi_city_mode', 'multi-city-range')
         if mode == 'multi-city-open-jaw':
-            return self._search_multi_city_open_jaw(config, job_id=job_id)
+            return self._search_multi_city_open_jaw(config)
         if mode == 'multi-city-range' or (config.get('start_period') and config.get('end_period')):
-            return self._search_multi_city_range(config, job_id=job_id)
-        return self._search_multi_city_specific(config, job_id=job_id)
+            return self._search_multi_city_range(config)
+        return self._search_multi_city_specific(config)
 
-    def _search_multi_city_specific(self, config, job_id=None):
+    def _search_multi_city_specific(self, config):
         """Handle multi-city search when exact dates are provided."""
         from datetime import datetime
 
@@ -947,8 +846,7 @@ class FlightSearchEngine:
                     total=0,
                     current_dates="No valid midpoint dates",
                     status="completed",
-                    flights_found=0,
-                    job_id=job_id
+                    flights_found=0
                 )
                 return {
                     'success': True,
@@ -969,8 +867,7 @@ class FlightSearchEngine:
                         total=total_combinations,
                         current_dates=combination_label,
                         status="searching",
-                        flights_found=len(all_combinations),
-                        job_id=job_id
+                        flights_found=len(all_combinations)
                     )
 
                     leg1_flights = self._fetch_one_way_flights(
@@ -1042,8 +939,7 @@ class FlightSearchEngine:
                                 total=total_combinations,
                                 current_dates=combination_label,
                                 status="found_flights",
-                                flights_found=len(all_combinations),
-                                job_id=job_id
+                                flights_found=len(all_combinations)
                             )
 
                 except Exception as e:
@@ -1053,8 +949,7 @@ class FlightSearchEngine:
                         total=total_combinations,
                         current_dates=f"{leg1_date} -> {leg2_date_option} -> {leg3_date}",
                         status="error",
-                        flights_found=len(all_combinations),
-                        job_id=job_id
+                        flights_found=len(all_combinations)
                     )
                     continue
 
@@ -1067,8 +962,7 @@ class FlightSearchEngine:
                 total=total_combinations,
                 current_dates="Search completed!",
                 status="completed",
-                flights_found=len(all_combinations),
-                job_id=job_id
+                flights_found=len(all_combinations)
             )
 
             return {
@@ -1090,7 +984,7 @@ class FlightSearchEngine:
                 'search_type': 'multi_city'
             }
 
-    def _search_multi_city_range(self, config, job_id=None):
+    def _search_multi_city_range(self, config):
         """Handle multi-city search over a date range with flexible mid-point."""
         from datetime import datetime, timedelta
 
@@ -1202,8 +1096,7 @@ class FlightSearchEngine:
                     total=0,
                     current_dates="No valid multi-city combinations",
                     status="completed",
-                    flights_found=0,
-                    job_id=job_id
+                    flights_found=0
                 )
                 return {
                     'success': True,
@@ -1219,8 +1112,7 @@ class FlightSearchEngine:
                 total=total_combinations,
                 current_dates="Preparing multi-city combinations...",
                 status="preparing",
-                flights_found=0,
-                job_id=job_id
+                flights_found=0
             )
 
             print(f"   Total combinations to test: {total_combinations}")
@@ -1248,8 +1140,7 @@ class FlightSearchEngine:
                         total=total_combinations,
                         current_dates=combination_label,
                         status="searching",
-                        flights_found=len(all_combinations),
-                        job_id=job_id
+                        flights_found=len(all_combinations)
                     )
 
                     try:
@@ -1324,8 +1215,7 @@ class FlightSearchEngine:
                                 total=total_combinations,
                                 current_dates=combination_label,
                                 status="found_flights",
-                                flights_found=len(all_combinations),
-                                job_id=job_id
+                                flights_found=len(all_combinations)
                             )
 
                     except Exception as leg_error:
@@ -1335,8 +1225,7 @@ class FlightSearchEngine:
                             total=total_combinations,
                             current_dates=combination_label,
                             status="error",
-                            flights_found=len(all_combinations),
-                            job_id=job_id
+                            flights_found=len(all_combinations)
                         )
                         continue
             
@@ -1349,8 +1238,7 @@ class FlightSearchEngine:
                 total=total_combinations,
                 current_dates="Search completed!",
                 status="completed",
-                flights_found=len(all_combinations),
-                job_id=job_id
+                flights_found=len(all_combinations)
             )
             
             return {
@@ -1372,7 +1260,7 @@ class FlightSearchEngine:
                 'search_type': 'multi_city'
             }
 
-    def _search_multi_city_open_jaw(self, config, job_id=None):
+    def _search_multi_city_open_jaw(self, config):
         """Handle open-jaw (two-leg) multi-city search."""
         from datetime import datetime, timedelta
 
@@ -1466,8 +1354,7 @@ class FlightSearchEngine:
                     total=0,
                     current_dates="No valid open-jaw combinations",
                     status="completed",
-                    flights_found=0,
-                    job_id=job_id
+                    flights_found=0
                 )
                 return {
                     'success': True,
@@ -1483,8 +1370,7 @@ class FlightSearchEngine:
                 total=total_combinations,
                 current_dates="Preparing open-jaw combinations...",
                 status="preparing",
-                flights_found=0,
-                job_id=job_id
+                flights_found=0
             )
 
             print(f"   Total combinations to test: {total_combinations}")
@@ -1501,8 +1387,7 @@ class FlightSearchEngine:
                     total=total_combinations,
                     current_dates=combination_label,
                     status="searching",
-                    flights_found=len(all_combinations),
-                    job_id=job_id
+                    flights_found=len(all_combinations)
                 )
 
                 try:
@@ -1559,8 +1444,7 @@ class FlightSearchEngine:
                             total=total_combinations,
                             current_dates=combination_label,
                             status="found_flights",
-                            flights_found=len(all_combinations),
-                            job_id=job_id
+                            flights_found=len(all_combinations)
                         )
 
                 except Exception as combo_error:
@@ -1570,8 +1454,7 @@ class FlightSearchEngine:
                         total=total_combinations,
                         current_dates=combination_label,
                         status="error",
-                        flights_found=len(all_combinations),
-                        job_id=job_id
+                        flights_found=len(all_combinations)
                     )
                     continue
 
@@ -1584,8 +1467,7 @@ class FlightSearchEngine:
                 total=total_combinations,
                 current_dates="Search completed!",
                 status="completed",
-                flights_found=len(all_combinations),
-                job_id=job_id
+                flights_found=len(all_combinations)
             )
 
             return {
@@ -1722,312 +1604,6 @@ def test():
     </html>
     '''
 
-@app.route('/login')
-def login():
-    """Login page with Descope widget"""
-    return render_template('login.html', 
-                         descope_project_id="P37mczF1NShERSaYoouYUx4SNocu")
-
-@app.route('/auth/callback')
-def auth_callback():
-    """Handle Descope callback after login"""
-    if not descope_client:
-        return 'Descope not configured', 500
-    
-    # Get session token from query parameter or cookie
-    session_token = request.args.get('token') or request.cookies.get('DS')
-    
-    if not session_token:
-        return 'No session token found. Please try logging in again.', 401
-    
-    try:
-        # Validate and get user info
-        jwt_response = descope_client.validate_session(session_token=session_token)
-        user_id = jwt_response.get('sub') or jwt_response.get('userId')
-        user_email = jwt_response.get('email')
-        user_name = jwt_response.get('name', '')
-        
-        # Store in Flask session
-        session['descope_token'] = session_token
-        session['user_id'] = user_id
-        session['user_email'] = user_email
-        
-        # Create user in database if new
-        conn = sqlite3.connect('jobs.db')
-        c = conn.cursor()
-        
-        # Check if admin email
-        is_admin = 1 if user_email == 'talbuh@gmail.com' else 0
-        
-        c.execute('''INSERT OR IGNORE INTO users (id, email, name, is_admin) 
-                     VALUES (?, ?, ?, ?)''',
-                  (user_id, user_email, user_name, is_admin))
-        
-        # If admin, set unlimited quota (999999)
-        if is_admin:
-            c.execute('''INSERT INTO user_quota (user_id, monthly_limit, tier) 
-                         VALUES (?, 999999, 'admin')
-                         ON CONFLICT(user_id) DO UPDATE SET monthly_limit=999999, tier='admin' ''',
-                      (user_id,))
-        else:
-            c.execute('INSERT OR IGNORE INTO user_quota (user_id) VALUES (?)',
-                      (user_id,))
-        
-        conn.commit()
-        conn.close()
-        
-        print(f"User logged in: {user_email}")
-        return redirect('/')
-        
-    except Exception as e:
-        print(f"Auth callback error: {e}")
-        return f'Auth failed: {e}', 401
-
-@app.route('/logout')
-def logout():
-    """Logout user"""
-    session.clear()
-    return redirect('/')
-
-@app.route('/admin')
-@require_auth
-def admin_dashboard(current_user_id, current_user_email, is_admin=0):
-    """Admin dashboard - only accessible to admins"""
-    if not is_admin:
-        return 'Forbidden - Admin access required', 403
-    
-    conn = sqlite3.connect('jobs.db')
-    c = conn.cursor()
-    
-    # Get basic stats
-    c.execute('SELECT COUNT(*) FROM users')
-    total_users = c.fetchone()[0]
-    
-    c.execute('SELECT COUNT(*) FROM search_history')
-    total_searches = c.fetchone()[0]
-    
-    c.execute('''SELECT COUNT(*) FROM search_history 
-                 WHERE DATE(created_at) = DATE('now')''')
-    searches_today = c.fetchone()[0]
-    
-    c.execute('''SELECT COUNT(DISTINCT user_id) FROM search_history 
-                 WHERE created_at >= DATE('now', '-30 days')''')
-    active_users = c.fetchone()[0]
-    
-    # Advanced analytics
-    # Users who hit the limit (10 searches)
-    c.execute('''SELECT COUNT(*) FROM user_quota 
-                 WHERE searches_used >= 10 AND tier = 'free' ''')
-    users_hit_limit = c.fetchone()[0]
-    
-    # Paid users (pro, premium, unlimited - excluding admin tier)
-    c.execute('''SELECT COUNT(*) FROM user_quota 
-                 WHERE tier IN ('pro', 'premium', 'unlimited') AND tier != 'admin' ''')
-    paid_users = c.fetchone()[0]
-    
-    # Conversion rate calculation
-    conversion_rate = round((paid_users / users_hit_limit * 100) if users_hit_limit > 0 else 0, 1)
-    
-    # Average searches per user
-    avg_searches = round(total_searches / total_users, 1) if total_users > 0 else 0
-    
-    # Monthly revenue (estimated based on tiers)
-    tier_prices = {'pro': 9.99, 'premium': 29.99, 'unlimited': 19.99}
-    c.execute('''SELECT tier, COUNT(*) FROM user_quota 
-                 WHERE tier IN ('pro', 'premium', 'unlimited') 
-                 GROUP BY tier''')
-    monthly_revenue = sum(tier_prices.get(row[0], 0) * row[1] for row in c.fetchall())
-    
-    # Chart data: Users timeline (last 30 days)
-    c.execute('''SELECT DATE(created_at) as day, COUNT(*) as count
-                 FROM users
-                 WHERE created_at >= DATE('now', '-30 days')
-                 GROUP BY DATE(created_at)
-                 ORDER BY day''')
-    users_timeline = c.fetchall()
-    users_timeline_labels = [row[0] for row in users_timeline] if users_timeline else []
-    users_timeline_data = [row[1] for row in users_timeline] if users_timeline else []
-    
-    # Chart data: Tiers distribution
-    c.execute('''SELECT tier, COUNT(*) FROM user_quota GROUP BY tier''')
-    tiers_data_raw = c.fetchall()
-    tiers_dict = {tier: count for tier, count in tiers_data_raw}
-    tiers_labels = ['Free', 'Pro', 'Premium', 'Unlimited']
-    tiers_data = [
-        tiers_dict.get('free', 0),
-        tiers_dict.get('pro', 0),
-        tiers_dict.get('premium', 0),
-        tiers_dict.get('unlimited', 0) + tiers_dict.get('admin', 0)
-    ]
-    
-    # Chart data: Search activity (last 7 days)
-    c.execute('''SELECT DATE(created_at) as day, COUNT(*) as count
-                 FROM search_history
-                 WHERE created_at >= DATE('now', '-7 days')
-                 GROUP BY DATE(created_at)
-                 ORDER BY day''')
-    activity_data_raw = c.fetchall()
-    activity_labels = [row[0] for row in activity_data_raw] if activity_data_raw else []
-    activity_data = [row[1] for row in activity_data_raw] if activity_data_raw else []
-    
-    # Chart data: Conversion funnel
-    c.execute('SELECT COUNT(*) FROM users')
-    funnel_all_users = c.fetchone()[0]
-    
-    c.execute('SELECT COUNT(DISTINCT user_id) FROM search_history')
-    funnel_used_service = c.fetchone()[0]
-    
-    funnel_hit_limit = users_hit_limit
-    funnel_converted = paid_users
-    
-    funnel_data = [funnel_all_users, funnel_used_service, funnel_hit_limit, funnel_converted]
-    
-    # Get all users with their quota
-    c.execute('''SELECT u.id, u.email, u.is_admin, u.is_blocked, u.created_at,
-                        q.tier, q.monthly_limit, q.searches_used
-                 FROM users u
-                 LEFT JOIN user_quota q ON u.id = q.user_id
-                 ORDER BY u.created_at DESC''')
-    users = []
-    for row in c.fetchall():
-        users.append({
-            'id': row[0],
-            'email': row[1],
-            'is_admin': row[2],
-            'is_blocked': row[3],
-            'created_at': row[4],
-            'tier': row[5] or 'free',
-            'monthly_limit': row[6] or 10,
-            'searches_used': row[7] or 0
-        })
-    
-    conn.close()
-    
-    stats = {
-        'total_users': total_users,
-        'total_searches': total_searches,
-        'searches_today': searches_today,
-        'active_users': active_users
-    }
-    
-    analytics = {
-        'users_hit_limit': users_hit_limit,
-        'conversion_rate': conversion_rate,
-        'avg_searches_per_user': avg_searches,
-        'monthly_revenue': monthly_revenue,
-        'paid_users': paid_users
-    }
-    
-    chart_data = {
-        'users_timeline_labels': users_timeline_labels,
-        'users_timeline_data': users_timeline_data,
-        'tiers_labels': tiers_labels,
-        'tiers_data': tiers_data,
-        'activity_labels': activity_labels,
-        'activity_data': activity_data,
-        'funnel_data': funnel_data
-    }
-    
-    return render_template('admin_dashboard.html', 
-                         stats=stats, 
-                         analytics=analytics,
-                         chart_data=chart_data,
-                         users=users)
-
-@app.route('/admin/update_quota', methods=['POST'])
-@require_auth
-def admin_update_quota(current_user_id, current_user_email, is_admin=0):
-    """Update user quota - admin only"""
-    if not is_admin:
-        return jsonify({'error': 'Forbidden'}), 403
-    
-    data = request.get_json()
-    user_id = data.get('user_id')
-    tier = data.get('tier')
-    monthly_limit = data.get('monthly_limit')
-    
-    conn = sqlite3.connect('jobs.db')
-    c = conn.cursor()
-    c.execute('''UPDATE user_quota 
-                 SET tier = ?, monthly_limit = ? 
-                 WHERE user_id = ?''',
-              (tier, monthly_limit, user_id))
-    conn.commit()
-    conn.close()
-    
-    print(f"Admin {current_user_email} updated quota for user {user_id}: {tier}, {monthly_limit}")
-    return jsonify({'success': True})
-
-@app.route('/admin/block_user', methods=['POST'])
-@require_auth
-def admin_block_user(current_user_id, current_user_email, is_admin=0):
-    """Block/unblock user - admin only"""
-    if not is_admin:
-        return jsonify({'error': 'Forbidden'}), 403
-    
-    data = request.get_json()
-    user_id = data.get('user_id')
-    blocked = data.get('blocked', True)
-    
-    conn = sqlite3.connect('jobs.db')
-    c = conn.cursor()
-    c.execute('UPDATE users SET is_blocked = ? WHERE id = ?',
-              (1 if blocked else 0, user_id))
-    conn.commit()
-    conn.close()
-    
-    action = 'blocked' if blocked else 'unblocked'
-    print(f"Admin {current_user_email} {action} user {user_id}")
-    return jsonify({'success': True})
-
-@app.route('/api/user_info')
-def user_info():
-    """Get current user info (for frontend)"""
-    session_token = session.get('descope_token') or request.cookies.get('DS')
-    
-    if not session_token or not descope_client:
-        return jsonify({'logged_in': False})
-    
-    try:
-        jwt_response = descope_client.validate_session(session_token=session_token)
-        user_id = jwt_response.get('sub') or jwt_response.get('userId')
-        user_email = jwt_response.get('email')
-        
-        # Get quota and admin status
-        conn = sqlite3.connect('jobs.db')
-        c = conn.cursor()
-        c.execute('SELECT tier, monthly_limit, searches_used FROM user_quota WHERE user_id = ?', 
-                  (user_id,))
-        quota = c.fetchone()
-        
-        c.execute('SELECT is_admin FROM users WHERE id = ?', (user_id,))
-        admin_row = c.fetchone()
-        is_admin = admin_row[0] if admin_row else 0
-        
-        conn.close()
-        
-        if not quota:
-            quota = ('free', 10, 0)
-        
-        tier = quota[0] or 'free'
-        monthly_limit = quota[1] or 10
-        searches_used = quota[2] or 0
-        
-        # Check if unlimited
-        is_unlimited = tier == 'unlimited' or monthly_limit >= 999999
-        
-        return jsonify({
-            'logged_in': True,
-            'email': user_email,
-            'is_admin': is_admin,
-            'tier': tier,
-            'monthly_limit': monthly_limit,
-            'searches_used': searches_used,
-            'searches_remaining': 'Unlimited' if (is_admin or is_unlimited) else (monthly_limit - searches_used)
-        })
-    except:
-        return jsonify({'logged_in': False})
-
 @app.route('/progress_status')
 def progress_status():
     """Get current progress status by job_id"""
@@ -2085,49 +1661,8 @@ def get_search_results():
         return jsonify({'status': 'no_results'})
 
 @app.route('/search', methods=['POST'])
-@require_auth
-def search_flights(current_user_id, current_user_email, is_admin=0):
+def search_flights():
     try:
-        # Check quota and tier
-        conn = sqlite3.connect('jobs.db')
-        c = conn.cursor()
-        c.execute('SELECT tier, monthly_limit, searches_used FROM user_quota WHERE user_id = ?', 
-                  (current_user_id,))
-        quota = c.fetchone()
-        
-        if not quota:
-            # First time user - create quota entry
-            c.execute('INSERT INTO user_quota (user_id) VALUES (?)', (current_user_id,))
-            conn.commit()
-            quota = ('free', 10, 0)
-        
-        tier = quota[0] or 'free'
-        monthly_limit = quota[1] or 10
-        searches_used = quota[2] or 0
-        
-        # Skip quota check for admins or unlimited tier users
-        skip_quota = is_admin or tier == 'unlimited' or monthly_limit >= 999999
-        
-        if not skip_quota:
-            # Check if quota exceeded
-            if searches_used >= monthly_limit:
-                conn.close()
-                return jsonify({
-                    'error': 'Quota exceeded',
-                    'message': f'You have used all {monthly_limit} searches. Please upgrade to continue.',
-                    'searches_used': searches_used,
-                    'monthly_limit': monthly_limit
-                }), 429
-            
-            # Increment quota
-            c.execute('UPDATE user_quota SET searches_used = searches_used + 1 WHERE user_id = ?',
-                      (current_user_id,))
-            conn.commit()
-        else:
-            print(f"Unlimited access for {current_user_email} (admin={is_admin}, tier={tier})")
-        
-        conn.close()
-        
         # Generate unique job ID
         job_id = str(uuid.uuid4())
         
@@ -2156,19 +1691,6 @@ def search_flights(current_user_id, current_user_email, is_admin=0):
                 result = search_engine.search(config, job_id=job_id)
                 # Store result in database
                 save_job_result(job_id, {'result': result, 'config': config})
-                
-                # Save search history
-                conn = sqlite3.connect('jobs.db')
-                c = conn.cursor()
-                c.execute('''INSERT INTO search_history 
-                             (user_id, search_type, search_params, results_count) 
-                             VALUES (?, ?, ?, ?)''',
-                          (current_user_id, 
-                           config.get('trip_type', 'round-trip'),
-                           json.dumps(config),
-                           len(result.get('flights', []))))
-                conn.commit()
-                conn.close()
             except Exception as e:
                 print(f"Background search error: {e}")
                 update_job_progress(job_id, 0, 0, f'Error: {str(e)}', 'error', 0)
@@ -2195,46 +1717,11 @@ def search_flights(current_user_id, current_user_email, is_admin=0):
         })
 
 @app.route('/search_range', methods=['POST'])
-@require_auth
-def search_flights_range(current_user_id, current_user_email, is_admin=0):
+def search_flights_range():
     try:
-        # Check quota and tier
-        conn = sqlite3.connect('jobs.db')
-        c = conn.cursor()
-        c.execute('SELECT tier, monthly_limit, searches_used FROM user_quota WHERE user_id = ?', 
-                  (current_user_id,))
-        quota = c.fetchone()
-        
-        if not quota:
-            c.execute('INSERT INTO user_quota (user_id) VALUES (?)', (current_user_id,))
-            conn.commit()
-            quota = ('free', 10, 0)
-        
-        tier = quota[0] or 'free'
-        monthly_limit = quota[1] or 10
-        searches_used = quota[2] or 0
-        
-        skip_quota = is_admin or tier == 'unlimited' or monthly_limit >= 999999
-        
-        if not skip_quota:
-            if searches_used >= monthly_limit:
-                conn.close()
-                return jsonify({
-                    'error': 'Quota exceeded',
-                    'message': f'You have used all {monthly_limit} searches.',
-                    'searches_used': searches_used,
-                    'monthly_limit': monthly_limit
-                }), 429
-            
-            c.execute('UPDATE user_quota SET searches_used = searches_used + 1 WHERE user_id = ?',
-                      (current_user_id,))
-            conn.commit()
-        
-        conn.close()
-        
-        # Generate unique job ID
-        job_id = str(uuid.uuid4())
-        
+        # Clear previous progress updates
+        global progress_updates
+        progress_updates = []
         config = {
             'from_airport': request.form.get('from_airport', 'TLV').upper(),
             'to_airport': request.form.get('to_airport', 'BKK').upper(),
@@ -2251,39 +1738,10 @@ def search_flights_range(current_user_id, current_user_email, is_admin=0):
             'currency': request.form.get('currency', 'ILS')
         }
         
-        # Initialize job in database
-        update_job_progress(job_id, 0, 0, 'Initializing...', 'preparing', 0)
+        result = search_engine.search_date_range(config)
+        result['config'] = config
         
-        # Start search in background thread
-        def background_search():
-            try:
-                result = search_engine.search_date_range(config, job_id=job_id)
-                save_job_result(job_id, {'result': result, 'config': config})
-                
-                # Save search history
-                conn = sqlite3.connect('jobs.db')
-                c = conn.cursor()
-                c.execute('''INSERT INTO search_history 
-                             (user_id, search_type, search_params, results_count) 
-                             VALUES (?, ?, ?, ?)''',
-                          (current_user_id, 'date_range', json.dumps(config),
-                           len(result.get('flights', []))))
-                conn.commit()
-                conn.close()
-            except Exception as e:
-                print(f"Background search error: {e}")
-                update_job_progress(job_id, 0, 0, f'Error: {str(e)}', 'error', 0)
-                save_job_result(job_id, {'error': str(e)})
-        
-        thread = threading.Thread(target=background_search)
-        thread.daemon = True
-        thread.start()
-        
-        return jsonify({
-            'status': 'search_started',
-            'job_id': job_id,
-            'message': 'Search started in background'
-        })
+        return jsonify(result)
         
     except Exception as e:
         return jsonify({
@@ -2295,45 +1753,10 @@ def search_flights_range(current_user_id, current_user_email, is_admin=0):
         })
 
 @app.route('/search_multi_city', methods=['POST'])
-@require_auth
-def search_multi_city(current_user_id, current_user_email, is_admin=0):
+def search_multi_city():
     try:
-        # Check quota and tier
-        conn = sqlite3.connect('jobs.db')
-        c = conn.cursor()
-        c.execute('SELECT tier, monthly_limit, searches_used FROM user_quota WHERE user_id = ?', 
-                  (current_user_id,))
-        quota = c.fetchone()
-        
-        if not quota:
-            c.execute('INSERT INTO user_quota (user_id) VALUES (?)', (current_user_id,))
-            conn.commit()
-            quota = ('free', 10, 0)
-        
-        tier = quota[0] or 'free'
-        monthly_limit = quota[1] or 10
-        searches_used = quota[2] or 0
-        
-        skip_quota = is_admin or tier == 'unlimited' or monthly_limit >= 999999
-        
-        if not skip_quota:
-            if searches_used >= monthly_limit:
-                conn.close()
-                return jsonify({
-                    'error': 'Quota exceeded',
-                    'message': f'You have used all {monthly_limit} searches.',
-                    'searches_used': searches_used,
-                    'monthly_limit': monthly_limit
-                }), 429
-            
-            c.execute('UPDATE user_quota SET searches_used = searches_used + 1 WHERE user_id = ?',
-                      (current_user_id,))
-            conn.commit()
-        
-        conn.close()
-        
-        # Generate unique job ID
-        job_id = str(uuid.uuid4())
+        global progress_updates
+        progress_updates = []
 
         config = {
             'leg1_from': request.form.get('leg1_from', 'TLV').upper(),
@@ -2361,39 +1784,10 @@ def search_multi_city(current_user_id, current_user_email, is_admin=0):
             'multi_city_mode': request.form.get('multi_city_mode', 'multi-city-range')
         }
         
-        # Initialize job in database
-        update_job_progress(job_id, 0, 0, 'Initializing...', 'preparing', 0)
+        result = search_engine.search_multi_city(config)
+        result['config'] = config
         
-        # Start search in background thread
-        def background_search():
-            try:
-                result = search_engine.search_multi_city(config, job_id=job_id)
-                save_job_result(job_id, {'result': result, 'config': config})
-                
-                # Save search history
-                conn = sqlite3.connect('jobs.db')
-                c = conn.cursor()
-                c.execute('''INSERT INTO search_history 
-                             (user_id, search_type, search_params, results_count) 
-                             VALUES (?, ?, ?, ?)''',
-                          (current_user_id, 'multi_city', json.dumps(config),
-                           len(result.get('flights', []))))
-                conn.commit()
-                conn.close()
-            except Exception as e:
-                print(f"Background search error: {e}")
-                update_job_progress(job_id, 0, 0, f'Error: {str(e)}', 'error', 0)
-                save_job_result(job_id, {'error': str(e)})
-        
-        thread = threading.Thread(target=background_search)
-        thread.daemon = True
-        thread.start()
-        
-        return jsonify({
-            'status': 'search_started',
-            'job_id': job_id,
-            'message': 'Search started in background'
-        })
+        return jsonify(result)
         
     except Exception as e:
         return jsonify({
@@ -2418,12 +1812,11 @@ if __name__ == '__main__':
     # Only show local messages and open browser if running locally
     if host == '127.0.0.1':
         print("Starting Flight Search Web App...")
+        print("Opening browser in 1.5 seconds...")
         print(f"Access the app at: http://127.0.0.1:{port}")
         
-        # Open browser automatically only on first run (not on auto-reload)
-        if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-            print("Opening browser in 1.5 seconds...")
-            threading.Timer(1.5, open_browser, args=(port,)).start()
+        # Open browser automatically
+        threading.Timer(1.5, open_browser, args=(port,)).start()
     else:
         print(f"Starting Flight Search Web App on port {port}...")
         # Disable verbose logging in production
